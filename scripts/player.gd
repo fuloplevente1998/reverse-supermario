@@ -37,7 +37,7 @@ func _physics_process(delta: float) -> void:
         velocity.y = jump_velocity
         _jump_squash()
 
-    var input_vec := Input.get_vector("move_left", "move_right", "move_forward", "move_back")
+    var input_vec := Input.get_vector("move_left", "move_right", "move_back", "move_forward")
     var direction := Vector3(input_vec.x, 0.0, input_vec.y)
 
     if direction.length() > 0.05:

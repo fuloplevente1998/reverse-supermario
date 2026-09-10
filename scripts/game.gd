@@ -11,11 +11,13 @@ var hp_bar: ProgressBar
 var objective_label: Label
 var kill_label: Label
 var vignette: ColorRect
+var end_panel: ColorRect
 var enemies_total := 0
 var enemies_defeated := 0
 var ended := false
 
 func _ready() -> void:
+    process_mode = Node.PROCESS_MODE_ALWAYS
     _setup_environment()
     _build_world_details()
     _style_interface()
@@ -30,6 +32,7 @@ func _connect_gameplay() -> void:
     player.damage_taken.connect(_on_player_damage)
     goal.body_entered.connect(_on_goal_body_entered)
     restart_button.pressed.connect(_restart)
+    restart_button.gui_input.connect(_on_restart_gui_input)
 
     var enemies := get_tree().get_nodes_in_group("enemies")
     enemies_total = enemies.size()
@@ -57,7 +60,7 @@ func _style_interface() -> void:
     $UI/TopBar.add_child(hp_text)
 
     objective_label = Label.new()
-    objective_label.text = "CÉL: JUSS EL A KAPUIG"
+    objective_label.text = "CÉL: TÖRD ÁT A HŐSÖK VÉDELMÉT ÉS ÉRD EL A KAPUT"
     objective_label.position = Vector2(24, 78)
     objective_label.add_theme_font_size_override("font_size", 18)
     $UI.add_child(objective_label)
@@ -69,12 +72,23 @@ func _style_interface() -> void:
 
     status_label.add_theme_font_size_override("font_size", 42)
     status_label.modulate = Color(1.0, 0.86, 0.62, 1)
+    status_label.z_index = 101
+
+    end_panel = ColorRect.new()
+    end_panel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+    end_panel.color = Color(0.015, 0.012, 0.025, 0.76)
+    end_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+    end_panel.visible = false
+    end_panel.z_index = 90
+    $UI.add_child(end_panel)
 
     restart_button.text = "ÚJRAINDÍTÁS"
     restart_button.visible = false
-    restart_button.z_index = 50
+    restart_button.z_index = 120
     restart_button.mouse_filter = Control.MOUSE_FILTER_STOP
-    restart_button.add_theme_font_size_override("font_size", 24)
+    restart_button.focus_mode = Control.FOCUS_NONE
+    restart_button.add_theme_font_size_override("font_size", 25)
+    restart_button.custom_minimum_size = Vector2(300, 92)
 
     controls.z_index = 10
 
@@ -160,16 +174,32 @@ func _finish_game(message: String) -> void:
     ended = true
     status_label.text = message
     status_label.modulate.a = 1.0
+    if end_panel:
+        end_panel.visible = true
     restart_button.visible = true
     restart_button.disabled = false
-    restart_button.grab_focus()
+    restart_button.mouse_filter = Control.MOUSE_FILTER_STOP
+    restart_button.move_to_front()
+    status_label.move_to_front()
     player.set_physics_process(false)
     controls.visible = false
-
-func _restart() -> void:
-    restart_button.disabled = true
     for action in ["move_forward", "move_back", "move_left", "move_right", "jump", "attack", "block"]:
         Input.action_release(action)
+
+func _on_restart_gui_input(event: InputEvent) -> void:
+    if not ended:
+        return
+    if event is InputEventScreenTouch and event.pressed:
+        _restart()
+    elif event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+        _restart()
+
+func _restart() -> void:
+    if not ended:
+        return
+    restart_button.disabled = true
+    ended = false
+    get_tree().paused = false
     get_tree().reload_current_scene()
 
 func _bind_touch_buttons() -> void:

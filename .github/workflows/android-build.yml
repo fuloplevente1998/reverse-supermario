@@ -49,6 +49,27 @@ jobs:
           export_debug: true
           cache: true
 
+      - name: Find APK
+        id: apk
+        shell: bash
+        run: |
+          echo "Godot build directory: ${{ steps.export.outputs.build_directory }}"
+          APK="$(find "${{ steps.export.outputs.build_directory }}" -type f -name "*.apk" | head -n 1)"
+          if [ -z "$APK" ]; then
+            echo "No APK produced."
+            find "${{ steps.export.outputs.build_directory }}" -maxdepth 4 -type f -print || true
+            exit 1
+          fi
+          mkdir -p artifact
+          cp "$APK" artifact/ReversePlatformer-debug.apk
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: ReversePlatformer-debug-apk
+          path: artifact/ReversePlatformer-debug.apk
+          if-no-files-found: error
+
       - name: Smoke test first level
         shell: bash
         run: |
@@ -81,29 +102,22 @@ jobs:
           fi
 
       - name: Upload gameplay previews
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: gameplay-previews
           path: previews/*.png
-          if-no-files-found: error
+          if-no-files-found: warn
 
-      - name: Find APK
-        id: apk
-        shell: bash
-        run: |
-          echo "Godot build directory: ${{ steps.export.outputs.build_directory }}"
-          APK="$(find "${{ steps.export.outputs.build_directory }}" -type f -name "*.apk" | head -n 1)"
-          if [ -z "$APK" ]; then
-            echo "No APK produced."
-            find "${{ steps.export.outputs.build_directory }}" -maxdepth 4 -type f -print || true
-            exit 1
-          fi
-          mkdir -p artifact
-          cp "$APK" artifact/ReversePlatformer-debug.apk
 
-      - name: Upload APK
+      - name: Upload diagnostic logs
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: ReversePlatformer-debug-apk
-          path: artifact/ReversePlatformer-debug.apk
-          if-no-files-found: error
+          name: godot-ci-logs
+          path: |
+            godot-smoke.log
+            stage-smoke.log
+            preview.log
+          if-no-files-found: warn
+          retention-days: 14

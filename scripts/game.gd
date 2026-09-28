@@ -241,7 +241,7 @@ func _on_goal_body_entered(body: Node) -> void:
         next_button.visible = true
         next_button.move_to_front()
     else:
-        _finish_game("A KÜLDETÉS TELJESÍTVE")
+        _finish_game("A KAPITÁNY LEGYŐZVE — A HERCEGNŐ VÁRA A TIÉD!")
 
 func _stage_path(number: int) -> String:
     return "res://scenes/main.tscn" if number == 1 else "res://scenes/stage%d.tscn" % number

@@ -44,7 +44,7 @@ jobs:
         run: |
           set -euo pipefail
           sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends blender
+          sudo apt-get install -y --no-install-recommends blender python3-numpy
           mkdir -p assets/models build/blender
           blender --background --factory-startup --python tools/blender/generate_art.py -- --output assets/models --source build/blender 2>&1 | tee blender.log
           test -s assets/models/villain_knight.glb

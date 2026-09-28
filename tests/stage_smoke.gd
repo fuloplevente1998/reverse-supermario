@@ -104,5 +104,51 @@ func _verify() -> void:
             await process_frame
     if not _check(layouts.size() == 10 and kinds.size() == 5, "Expected ten layouts and five enemy types"):
         return
-    print("PASS: 30 stage/difficulty combinations, five enemies, outer physics, joystick aspect ratios, pause and captain gate")
+    if not await _verify_combat():
+        return
+    print("PASS: 30 stage/difficulty combinations, five enemies, outer physics, joystick aspect ratios, pause, captain gate, projectile damage and timed traps")
     quit(0)
+
+
+func _verify_combat() -> bool:
+    var stage = load("res://scenes/main.tscn").instantiate()
+    root.add_child(stage)
+    await process_frame
+    await physics_frame
+    stage.player.set_physics_process(false)
+    for enemy in get_nodes_in_group("enemies"):
+        enemy.set_physics_process(false)
+    var shooter: Node = get_nodes_in_group("enemies")[0]
+    for blocked in [false, true]:
+        stage.player.blocking = blocked
+        var before: int = stage.player.hp
+        var shot = load("res://scripts/projectile.gd").new()
+        shot.owner_rid = shooter.get_rid()
+        shot.damage = 10
+        shot.speed = 120
+        shot.direction = Vector3(0,0,1)
+        stage.add_child(shot)
+        shot.global_position = stage.player.global_position + Vector3(0,0,-3)
+        for frame in range(5):
+            await physics_frame
+        if not _check(stage.player.hp == before - (3 if blocked else 10), "Projectile collision or blocking failed"):
+            return false
+    stage.player.blocking = false
+    var trap = load("res://scripts/stage_hazard.gd").new()
+    trap.damage = 20
+    trap.period = 100.0
+    trap.position = stage.player.position - Vector3(0,0.6,0)
+    stage.add_child(trap)
+    var before_trap: int = stage.player.hp
+    for frame in range(3):
+        await physics_frame
+    if not _check(stage.player.hp == before_trap, "Inactive trap damages player"):
+        return false
+    trap.elapsed = 60.0
+    for frame in range(3):
+        await physics_frame
+    if not _check(stage.player.hp == before_trap - 20, "Active trap does not damage player or repeats every frame"):
+        return false
+    stage.queue_free()
+    await process_frame
+    return true

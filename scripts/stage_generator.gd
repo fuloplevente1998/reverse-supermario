@@ -3,6 +3,7 @@ extends RefCounted
 const Art = preload("res://scripts/art.gd")
 const MovingPlatform = preload("res://scripts/moving_platform.gd")
 const StageTwo = preload("res://scripts/stage_two.gd")
+const EnemyScript = preload("res://scripts/enemy.gd")
 
 # Eight authored recipes. The deterministic seed varies decoration, while
 # the jump gaps and checkpoint remain deliberately placed and traversable.
@@ -85,10 +86,16 @@ static func build(game: Node3D, stage_number: int) -> void:
                 safe = false
         if not safe:
             continue
-        var clone = game.get_node("Enemy1").duplicate()
-        clone.name = "ExtraGuard%d" % i
-        clone.position = Vector3(3.0, 1.1, z)
-        game.add_child(clone)
+        var guard := CharacterBody3D.new()
+        guard.name = "ExtraGuard%d" % i
+        guard.set_script(EnemyScript)
+        guard.position = Vector3(3.0, 1.1, z)
+        var guard_shape := BoxShape3D.new()
+        guard_shape.size = Vector3(1.1, 1.8, 1.1)
+        var guard_collision := CollisionShape3D.new()
+        guard_collision.shape = guard_shape
+        guard.add_child(guard_collision)
+        game.add_child(guard)
 
 static func _floor(game: Node3D, start: float, finish: float, stone: Material, index: int) -> void:
     var body := StaticBody3D.new()

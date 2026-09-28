@@ -16,6 +16,22 @@ func _verify() -> void:
         push_error("Joystick missing from stage one")
         quit(1)
         return
+    var joystick = stage_one.get_node("UI/Controls/Joystick")
+    var press := InputEventScreenTouch.new()
+    press.index = 3
+    press.pressed = true
+    press.position = joystick.size * 0.5 + Vector2(70, 0)
+    joystick._gui_input(press)
+    if stage_one.player.touch_axis.x < 0.5:
+        push_error("Joystick does not move the player axis")
+        quit(1)
+        return
+    press.pressed = false
+    joystick._gui_input(press)
+    if stage_one.player.touch_axis != Vector2.ZERO:
+        push_error("Joystick did not recenter after release")
+        quit(1)
+        return
     stage_one._on_goal_body_entered(stage_one.player)
     if not stage_one.ended or not stage_one.next_button.visible or not stage_one._is_stage_unlocked(2):
         push_error("Level one did not unlock the next stage")

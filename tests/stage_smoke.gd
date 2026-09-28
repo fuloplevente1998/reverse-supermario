@@ -4,7 +4,7 @@ func _initialize() -> void:
     call_deferred("_verify")
 
 func _verify() -> void:
-    var stage_one := load("res://scenes/main.tscn").instantiate()
+    var stage_one = load("res://scenes/main.tscn").instantiate()
     root.add_child(stage_one)
     await process_frame
     stage_one._on_goal_body_entered(stage_one.player)
@@ -15,7 +15,7 @@ func _verify() -> void:
     stage_one.queue_free()
     await process_frame
 
-    var stage_two := load("res://scenes/stage2.tscn").instantiate()
+    var stage_two = load("res://scenes/stage2.tscn").instantiate()
     root.add_child(stage_two)
     await process_frame
     if stage_two.stage_number != 2 or stage_two.get_node_or_null("MovingBridge9") == null or stage_two.get_node_or_null("Checkpoint") == null:

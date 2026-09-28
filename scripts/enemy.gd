@@ -9,6 +9,9 @@ signal defeated
 @export var attack_cooldown := 0.9
 @export var aggro_range := 22.0
 
+const Art = preload("res://scripts/art.gd")
+var dead := false
+var legs: Array[Node3D] = []
 var hp := 60
 var attack_ready := true
 var player: CharacterBody3D
@@ -22,6 +25,8 @@ func _ready() -> void:
     _build_visual()
 
 func _physics_process(delta: float) -> void:
+    if dead:
+        return
     if player == null or not is_instance_valid(player):
         player = get_tree().get_first_node_in_group("player") as CharacterBody3D
         return
@@ -46,6 +51,9 @@ func _physics_process(delta: float) -> void:
         _try_attack()
 
     move_and_slide()
+    for i in range(legs.size()):
+        var moving := Vector2(velocity.x, velocity.z).length() > 0.2
+        legs[i].rotation.x = sin(Time.get_ticks_msec() * 0.013 + i * PI) * 0.35 if moving else 0.0
 
 func _try_attack() -> void:
     if not attack_ready or player == null:
@@ -58,9 +66,14 @@ func _try_attack() -> void:
     attack_ready = true
 
 func take_damage(amount: int, source_position := Vector3.ZERO) -> void:
+    if dead:
+        return
     hp = max(0, hp - amount)
     _hit_reaction(source_position)
     if hp <= 0:
+        dead = true
+        remove_from_group("enemies")
+        set_physics_process(false)
         defeated.emit()
         await get_tree().create_timer(0.16).timeout
         queue_free()
@@ -87,10 +100,10 @@ func _build_visual() -> void:
     body_mesh = MeshInstance3D.new()
     var torso := CapsuleMesh.new()
     torso.radius = 0.5
-    torso.height = 1.55
+    torso.height = 0.95
     body_mesh.mesh = torso
     body_mesh.material_override = armor
-    body_mesh.position.y = 0.04
+    body_mesh.position.y = 0.2
     visual_root.add_child(body_mesh)
 
     var helm := MeshInstance3D.new()
@@ -102,26 +115,7 @@ func _build_visual() -> void:
     helm.position.y = 0.92
     visual_root.add_child(helm)
 
-    for side in [-1.0, 1.0]:
-        var eye := MeshInstance3D.new()
-        var eye_mesh := SphereMesh.new()
-        eye_mesh.radius = 0.065
-        eye_mesh.height = 0.13
-        eye.mesh = eye_mesh
-        eye.material_override = glow
-        eye.position = Vector3(0.14 * side, 0.97, 0.34)
-        visual_root.add_child(eye)
-
-        var horn := MeshInstance3D.new()
-        var horn_mesh := CylinderMesh.new()
-        horn_mesh.top_radius = 0.0
-        horn_mesh.bottom_radius = 0.085
-        horn_mesh.height = 0.55
-        horn.mesh = horn_mesh
-        horn.material_override = armor
-        horn.position = Vector3(0.28 * side, 1.27, 0)
-        horn.rotation_degrees.z = -24.0 * side
-        visual_root.add_child(horn)
+    legs = Art.armor(visual_root, false)
 
 func _hit_reaction(source_position: Vector3) -> void:
     if body_mesh:
@@ -146,3 +140,4 @@ func _lunge() -> void:
     var tween := create_tween()
     tween.tween_property(visual_root, "scale", Vector3(0.9, 0.9, 1.18), 0.08)
     tween.tween_property(visual_root, "scale", Vector3.ONE, 0.12)
+

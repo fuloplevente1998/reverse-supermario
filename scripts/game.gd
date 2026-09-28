@@ -15,11 +15,13 @@ var end_panel: ColorRect
 var enemies_total := 0
 var enemies_defeated := 0
 var ended := false
+var status_tween: Tween
 
 func _ready() -> void:
     process_mode = Node.PROCESS_MODE_ALWAYS
     _setup_environment()
     _build_world_details()
+    preload("res://scripts/art.gd").courtyard(self)
     _style_interface()
     _connect_gameplay()
     _bind_touch_buttons()
@@ -100,6 +102,13 @@ func _style_interface() -> void:
     $UI.add_child(vignette)
     $UI.move_child(vignette, 0)
 
+    var view_button := Button.new()
+    view_button.text = "NÉZETVÁLTÁS  •  C"
+    view_button.position = Vector2(1000, 24)
+    view_button.size = Vector2(250, 64)
+    view_button.focus_mode = Control.FOCUS_NONE
+    controls.add_child(view_button)
+    view_button.pressed.connect($Player/CameraPivot.toggle_view)
     _style_control_buttons()
 
 func _style_control_buttons() -> void:
@@ -135,12 +144,7 @@ func _update_kills() -> void:
         kill_label.text = "ŐRÖK: %d / %d" % [enemies_defeated, enemies_total]
 
 func _on_player_attack() -> void:
-    var camera := $Player/CameraPivot/Camera3D as Camera3D
-    if camera:
-        var base := camera.position
-        var tween := create_tween()
-        tween.tween_property(camera, "position", base + Vector3(0, 0, 0.16), 0.05)
-        tween.tween_property(camera, "position", base, 0.09)
+    pass
 
 func _on_player_damage(amount: int, blocked: bool) -> void:
     if vignette:
@@ -154,10 +158,12 @@ func _pulse_status(text_value: String) -> void:
         return
     status_label.text = text_value
     status_label.modulate.a = 1.0
-    var tween := create_tween()
-    tween.tween_interval(0.45)
-    tween.tween_property(status_label, "modulate:a", 0.0, 0.35)
-    tween.tween_callback(func():
+    if status_tween:
+        status_tween.kill()
+    status_tween = create_tween()
+    status_tween.tween_interval(0.45)
+    status_tween.tween_property(status_label, "modulate:a", 0.0, 0.35)
+    status_tween.tween_callback(func():
         if not ended:
             status_label.text = ""
             status_label.modulate.a = 1.0
@@ -172,6 +178,10 @@ func _on_goal_body_entered(body: Node) -> void:
 
 func _finish_game(message: String) -> void:
     ended = true
+    if status_tween:
+        status_tween.kill()
+    for enemy in get_tree().get_nodes_in_group("enemies"):
+        enemy.set_physics_process(false)
     status_label.text = message
     status_label.modulate.a = 1.0
     if end_panel:
@@ -222,27 +232,27 @@ func _setup_environment() -> void:
     env.background_mode = Environment.BG_SKY
     var sky := Sky.new()
     var sky_mat := ProceduralSkyMaterial.new()
-    sky_mat.sky_top_color = Color(0.018, 0.022, 0.07, 1)
-    sky_mat.sky_horizon_color = Color(0.31, 0.09, 0.12, 1)
+    sky_mat.sky_top_color = Color(0.045, 0.11, 0.2, 1)
+    sky_mat.sky_horizon_color = Color(0.56, 0.38, 0.29, 1)
     sky_mat.ground_bottom_color = Color(0.015, 0.018, 0.028, 1)
     sky_mat.ground_horizon_color = Color(0.11, 0.055, 0.07, 1)
     sky_mat.sun_angle_max = 12.0
     sky.sky_material = sky_mat
     env.sky = sky
     env.ambient_light_source = Environment.AMBIENT_SOURCE_SKY
-    env.ambient_light_energy = 0.55
+    env.ambient_light_energy = 0.85
     env.tonemap_mode = Environment.TONE_MAPPER_FILMIC
-    env.glow_enabled = true
+    env.glow_enabled = false # Mobile: use emissive materials without post-process bloom.
     env.fog_enabled = true
     env.fog_light_color = Color(0.2, 0.08, 0.1, 1)
     env.fog_light_energy = 0.55
-    env.fog_density = 0.012
+    env.fog_density = 0.004
     env.fog_height = 0.0
     $WorldEnvironment.environment = env
 
 func _build_world_details() -> void:
     var stone := StandardMaterial3D.new()
-    stone.albedo_color = Color(0.105, 0.11, 0.14, 1)
+    stone.albedo_color = Color(0.25, 0.3, 0.36, 1)
     stone.roughness = 0.86
 
     var ember := StandardMaterial3D.new()
@@ -313,3 +323,4 @@ func _build_world_details() -> void:
         lintel.material_override = stone
         lintel.position = Vector3(0, 5.0, z)
         add_child(lintel)
+

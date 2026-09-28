@@ -11,9 +11,15 @@ Desktop:
 - Space: jump
 - J: attack
 - K: block
+- C: switch between behind-the-character and side camera
 
 Android:
 - on-screen directional/action buttons
+- NÉZETVÁLTÁS: switch camera; in side view, right moves toward the gate
+
+## Art pipeline
+
+The current first level has original procedural 3D armor, animated cape, paved courtyard, trees and castle gate. It runs as a native Godot game. Detailed models and animations can be authored in Blender and exported as glTF 2.0 (.glb) into Godot. Keep a source .blend file and exported .glb together, use small shared materials and texture atlases, and profile the result on Android hardware.
 
 ## Engine
 

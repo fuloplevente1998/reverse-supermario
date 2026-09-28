@@ -31,6 +31,8 @@ var body_mesh: MeshInstance3D
 var weapon_root: Node3D
 var camera_pivot: Node3D
 var camera_yaw: float = 0.0
+var legs: Array[Node3D] = []
+const Art = preload("res://scripts/art.gd")
 
 func _ready() -> void:
     hp = max_hp
@@ -64,7 +66,9 @@ func _physics_process(delta: float) -> void:
 
     if input_vec.length_squared() > 0.01:
         var basis_y := Basis(Vector3.UP, camera_yaw)
-        var direction := (basis_y * Vector3(input_vec.x, 0.0, input_vec.y)).normalized()
+        var direction := (basis_y * Vector3(-input_vec.x, 0.0, input_vec.y)).normalized()
+        if camera_pivot.get("side_view"):
+            direction = Vector3(-input_vec.y, 0.0, input_vec.x).normalized()
         var speed := move_speed
         if blocking:
             speed *= 0.48
@@ -86,6 +90,10 @@ func _physics_process(delta: float) -> void:
         attack()
 
     move_and_slide()
+    for i in range(legs.size()):
+        var stride := sin(Time.get_ticks_msec() * 0.016 + i * PI) * 0.45
+        var moving := Vector2(velocity.x, velocity.z).length() > 0.2 and is_on_floor()
+        legs[i].rotation.x = lerpf(legs[i].rotation.x, stride if moving else 0.0, minf(1.0, delta * 14.0))
 
 func attack() -> void:
     if not attack_ready or dead or blocking:
@@ -186,10 +194,10 @@ func _build_character_visual() -> void:
     body_mesh = MeshInstance3D.new()
     var torso := CapsuleMesh.new()
     torso.radius = 0.47
-    torso.height = 1.45
+    torso.height = 0.95
     body_mesh.mesh = torso
     body_mesh.material_override = dark
-    body_mesh.position.y = 0.05
+    body_mesh.position.y = 0.2
     visual_root.add_child(body_mesh)
 
     var head := MeshInstance3D.new()
@@ -222,14 +230,8 @@ func _build_character_visual() -> void:
         horn.rotation_degrees.z = -22.0 * side
         visual_root.add_child(horn)
 
-    var cape := MeshInstance3D.new()
-    var cape_mesh := BoxMesh.new()
-    cape_mesh.size = Vector3(0.8, 1.15, 0.08)
-    cape.mesh = cape_mesh
-    cape.material_override = crimson
-    cape.position = Vector3(0, 0.05, -0.38)
-    cape.rotation_degrees.x = -8.0
-    visual_root.add_child(cape)
+    legs = Art.armor(visual_root, true)
+    Art.cape(visual_root)
 
     weapon_root = Node3D.new()
     weapon_root.position = Vector3(0.58, 0.15, 0.15)
@@ -288,3 +290,4 @@ func _damage_flash(was_blocked: bool) -> void:
     await get_tree().create_timer(0.11).timeout
     if is_instance_valid(mat):
         mat.albedo_color = original
+

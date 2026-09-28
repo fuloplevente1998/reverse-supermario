@@ -181,6 +181,8 @@ func _build_character_visual() -> void:
     visual_root = Node3D.new()
     visual_root.name = "VillainVisual"
     add_child(visual_root)
+    if _install_blender_visual():
+        return
 
     var dark := StandardMaterial3D.new()
     dark.albedo_color = Color(0.055, 0.025, 0.07, 1)
@@ -258,6 +260,39 @@ func _build_character_visual() -> void:
     guard.material_override = crimson
     guard.position = Vector3(0, 0, 0.12)
     weapon_root.add_child(guard)
+
+
+func _install_blender_visual() -> bool:
+    # CI generates this GLB using Blender before Godot imports the project.
+    # A local checkout without Blender retains the existing procedural avatar.
+    const MODEL_PATH := "res://assets/models/villain_knight.glb"
+    if not ResourceLoader.exists(MODEL_PATH):
+        return false
+    var scene := load(MODEL_PATH) as PackedScene
+    if scene == null:
+        return false
+    var model := scene.instantiate() as Node3D
+    if model == null:
+        return false
+    visual_root.add_child(model)
+    var chest := model.find_child("Chest", true, false) as MeshInstance3D
+    var sword := model.find_child("WeaponPivot", true, false) as Node3D
+    var left_leg := model.find_child("LegLeft", true, false) as Node3D
+    var right_leg := model.find_child("LegRight", true, false) as Node3D
+    if chest == null or sword == null or left_leg == null or right_leg == null:
+        push_warning("Incomplete Blender character; using procedural fallback")
+        visual_root.remove_child(model)
+        model.queue_free()
+        return false
+    body_mesh = chest
+    var chest_material := chest.get_active_material(0)
+    if chest_material is StandardMaterial3D:
+        # Per-character copy: the damage flash must not tint every instance.
+        body_mesh.material_override = chest_material.duplicate() as StandardMaterial3D
+    weapon_root = sword
+    legs = [left_leg, right_leg]
+    Art.cape(visual_root)
+    return true
 
 func _attack_animation() -> void:
     if weapon_root == null:

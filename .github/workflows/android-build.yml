@@ -2,7 +2,7 @@ name: Android Debug APK
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main", "feature/0.0.8-blender-villain" ]
   workflow_dispatch:
 
 jobs:
@@ -37,6 +37,28 @@ jobs:
           echo "GODOT_ANDROID_KEYSTORE_DEBUG_USER=androiddebugkey" >> "$GITHUB_ENV"
           echo "GODOT_ANDROID_KEYSTORE_DEBUG_PASSWORD=android" >> "$GITHUB_ENV"
 
+      - name: Generate original Blender models
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends blender
+          mkdir -p assets/models build/blender
+          blender --background --factory-startup --python tools/blender/generate_art.py -- --output assets/models --source build/blender 2>&1 | tee blender.log
+          test -s assets/models/villain_knight.glb
+          test -s assets/models/fortress_gate.glb
+
+      - name: Upload editable Blender sources and GLBs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: blender-art-source-and-models
+          path: |
+            build/blender/*.blend
+            assets/models/*.glb
+          if-no-files-found: warn
+          retention-days: 30
+
       - name: Export Android debug APK
         id: export
         uses: firebelley/godot-export@v8.0.0
@@ -69,6 +91,20 @@ jobs:
           name: ReversePlatformer-debug-apk
           path: artifact/ReversePlatformer-debug.apk
           if-no-files-found: error
+
+      - name: Test Blender assets in Godot
+        shell: bash
+        run: |
+          set -euo pipefail
+          GODOT="$(find "$HOME/.local/share/godot/godot_executable" -maxdepth 1 -type f -name 'Godot*_linux.x86_64' -print -quit)"
+          if [ -z "$GODOT" ]; then
+            echo "Godot executable not found"
+            exit 1
+          fi
+          "$GODOT" --headless --path . --script res://tests/art_smoke.gd 2>&1 | tee art-smoke.log
+          if grep -E 'SCRIPT ERROR|ERROR:' art-smoke.log; then
+            exit 1
+          fi
 
       - name: Smoke test first level
         shell: bash
@@ -116,6 +152,8 @@ jobs:
         with:
           name: godot-ci-logs
           path: |
+            blender.log
+            art-smoke.log
             godot-smoke.log
             stage-smoke.log
             preview.log

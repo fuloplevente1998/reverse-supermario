@@ -237,9 +237,21 @@ static func _scenery(game: Node3D, number: int, recipe: Dictionary, stone: Mater
             else:
                 Art.cylinder(game, 0.7, 3.5 + number * 0.15, at + Vector3.UP * 1.75, stone)
                 Art.box(game, Vector3(1.7, 0.25, 1.7), at + Vector3.UP * 3.6, trim)
-    # One destination gate; repetitive foreground arches no longer hide the route.
-    for x in [-2.3, 2.3]:
-        Art.box(game, Vector3(1, 5.5, 1.1), Vector3(x, 2.75, 40), stone)
-    Art.box(game, Vector3(5.8, 0.65, 1.1), Vector3(0, 5.2, 40), trim)
+    # The first stage uses the original Blender castle gateway when generated.
+    # All other stages, and source checkouts without Blender, keep the fallback.
+    var custom_gate := false
+    if number == 1 and ResourceLoader.exists("res://assets/models/fortress_gate.glb"):
+        var gate_scene := load("res://assets/models/fortress_gate.glb") as PackedScene
+        if gate_scene:
+            var visual := gate_scene.instantiate() as Node3D
+            if visual:
+                visual.name = "FortressGateVisual"
+                visual.position = Vector3(0, 0, 40)
+                game.add_child(visual)
+                custom_gate = true
+    if not custom_gate:
+        for x in [-2.3, 2.3]:
+            Art.box(game, Vector3(1, 5.5, 1.1), Vector3(x, 2.75, 40), stone)
+        Art.box(game, Vector3(5.8, 0.65, 1.1), Vector3(0, 5.2, 40), trim)
     if number == 10:
         Art.box(game, Vector3(3, 4, 1), Vector3(0, 2, 43), trim)

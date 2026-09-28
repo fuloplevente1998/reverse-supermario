@@ -30,6 +30,19 @@ jobs:
           export_debug: true
           cache: true
 
+      - name: Smoke test first level
+        shell: bash
+        run: |
+          GODOT="$(find "$HOME/.local/share/godot/godot_executable" -maxdepth 1 -type f -name 'Godot*_linux.x86_64' -print -quit)"
+          if [ -z "$GODOT" ]; then
+            echo "Godot executable not found"
+            exit 1
+          fi
+          "$GODOT" --headless --path . --quit-after 30 2>&1 | tee godot-smoke.log
+          if grep -E 'SCRIPT ERROR|ERROR:' godot-smoke.log; then
+            exit 1
+          fi
+
       - name: Find APK
         id: apk
         shell: bash

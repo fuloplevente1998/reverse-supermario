@@ -29,16 +29,10 @@ var difficulty_index := 1
 var checkpoint_position := Vector3(0, 1.1, -10)
 
 func _ready() -> void:
-    process_mode = Node.PROCESS_MODE_ALWAYS
+    $UI.process_mode = Node.PROCESS_MODE_ALWAYS
     _load_difficulty()
     _setup_environment()
-    _build_world_details()
-    if stage_number == 1:
-        preload("res://scripts/art.gd").courtyard(self)
-    elif stage_number == 2:
-        StageTwo.build(self)
-    else:
-        StageGenerator.build(self, stage_number)
+    StageGenerator.build(self, stage_number)
     _build_boundaries()
     _apply_difficulty()
     _style_interface()
@@ -47,7 +41,7 @@ func _ready() -> void:
     _on_hp_changed(player.hp)
 
 func _physics_process(_delta: float) -> void:
-    if stage_number >= 2 and not ended and player.global_position.y < -6.0:
+    if not ended and player.global_position.y < -6.0:
         player.global_position = checkpoint_position
         player.velocity = Vector3.ZERO
         player.take_damage(_hazard_damage(25))
@@ -60,7 +54,7 @@ func _on_trap_entered(body: Node3D) -> void:
 
 func _on_checkpoint_entered(body: Node3D) -> void:
     if body == player and not ended:
-        checkpoint_position = Vector3(0, 1.1, 18.0 if stage_number == 2 else 16.0)
+        checkpoint_position = Vector3(0, 1.1, 16.0)
         _pulse_status("ELLENŐRZŐPONT AKTÍV")
 
 func _connect_gameplay() -> void:
@@ -194,6 +188,8 @@ func _on_hp_changed(value: int) -> void:
         hp_bar.value = value
 
 func _on_enemy_defeated() -> void:
+    if stage_number == 10 and goal.overlaps_body(player):
+        call_deferred("_on_goal_body_entered", player)
     enemies_defeated += 1
     _update_kills()
     _pulse_status("ELLENFÉL LEGYŐZVE")
@@ -234,6 +230,11 @@ func _on_player_died() -> void:
 func _on_goal_body_entered(body: Node) -> void:
     if body != player or ended:
         return
+    if stage_number == 10:
+        var captain := get_node_or_null("Captain")
+        if captain and not captain.dead:
+            _pulse_status("ELŐBB GYŐZD LE A KAPITÁNYT!")
+            return
     if stage_number < 10:
         _unlock_stage(stage_number + 1)
         _finish_game("%d. PÁLYA TELJESÍTVE" % stage_number)
@@ -332,10 +333,13 @@ func _difficulty_text() -> String:
 func _open_stage_panel() -> void:
     stage_panel.visible = true
     controls.visible = false
-    player.set_touch_axis(Vector2.ZERO)
+    $UI/Controls/Joystick._reset_pointer()
+    player.set_touch_action("block", false)
+    get_tree().paused = true
 
 func _close_stage_panel() -> void:
     stage_panel.visible = false
+    get_tree().paused = false
     controls.visible = true
 
 func _cycle_difficulty() -> void:
@@ -346,10 +350,12 @@ func _cycle_difficulty() -> void:
     if progress.save(SAVE_PATH) != OK:
         push_error("Unable to save difficulty")
     difficulty_button.text = _difficulty_text()
+    get_tree().paused = false
     # Restart so player and guard statistics use the same chosen difficulty.
     get_tree().call_deferred("reload_current_scene")
 
 func _select_stage(number: int) -> void:
+    get_tree().paused = false
     if _is_stage_unlocked(number):
         get_tree().call_deferred("change_scene_to_file", _stage_path(number))
 
@@ -358,6 +364,7 @@ func _open_next_stage() -> void:
         get_tree().call_deferred("change_scene_to_file", _stage_path(stage_number + 1))
 
 func _go_home() -> void:
+    get_tree().paused = false
     player.set_touch_axis(Vector2.ZERO)
     get_tree().call_deferred("change_scene_to_file", "res://scenes/title.tscn")
 
@@ -365,8 +372,9 @@ func _finish_game(message: String) -> void:
     ended = true
     if status_tween:
         status_tween.kill()
-    for enemy in get_tree().get_nodes_in_group("enemies"):
-        enemy.set_physics_process(false)
+    for group in ["enemies", "hazards", "projectiles"]:
+        for actor in get_tree().get_nodes_in_group(group):
+            actor.set_physics_process(false)
     status_label.text = message
     status_label.modulate.a = 1.0
     if end_panel:
@@ -441,7 +449,7 @@ func _setup_environment() -> void:
     $Sun.light_energy = 1.3
 
 func _build_boundaries() -> void:
-    var half_width := 17.7 if stage_number == 1 else (8.2 if stage_number == 2 else 8.7)
+    var half_width := StageGenerator.width(stage_number) * 0.5 - 0.3
     var stone := StandardMaterial3D.new()
     stone.albedo_color = Color(0.49, 0.57, 0.6)
     stone.roughness = 0.92
@@ -470,76 +478,3 @@ func _boundary(node_name: String, center: Vector3, dimensions: Vector3, stone: M
     railing.position.y = -4.75
     body.add_child(railing)
 
-func _build_world_details() -> void:
-    var stone := StandardMaterial3D.new()
-    stone.albedo_color = Color(0.25, 0.3, 0.36, 1)
-    stone.roughness = 0.86
-
-    var ember := StandardMaterial3D.new()
-    ember.albedo_color = Color(0.85, 0.12, 0.025, 1)
-    ember.emission_enabled = true
-    ember.emission = Color(0.95, 0.055, 0.012, 1)
-    ember.emission_energy_multiplier = 3.5
-
-    var metal := StandardMaterial3D.new()
-    metal.albedo_color = Color(0.12, 0.13, 0.17, 1)
-    metal.metallic = 0.72
-    metal.roughness = 0.31
-
-    for z in range(-6, 39, 6):
-        for side in [-1.0, 1.0]:
-            var pillar := MeshInstance3D.new()
-            var mesh := BoxMesh.new()
-            mesh.size = Vector3(1.2, 3.8 + float((z + 6) % 3) * 0.4, 1.2)
-            pillar.mesh = mesh
-            pillar.material_override = stone
-            pillar.position = Vector3(11.5 * side, mesh.size.y * 0.5, z)
-            add_child(pillar)
-
-            var cap := MeshInstance3D.new()
-            var cap_mesh := BoxMesh.new()
-            cap_mesh.size = Vector3(1.7, 0.35, 1.7)
-            cap.mesh = cap_mesh
-            cap.material_override = metal
-            cap.position = pillar.position + Vector3(0, mesh.size.y * 0.5 + 0.15, 0)
-            add_child(cap)
-
-            if z % 12 == 0:
-                var crystal := MeshInstance3D.new()
-                var crystal_mesh := SphereMesh.new()
-                crystal_mesh.radius = 0.22
-                crystal_mesh.height = 0.44
-                crystal.mesh = crystal_mesh
-                crystal.material_override = ember
-                crystal.position = cap.position + Vector3(0, 0.65, 0)
-                add_child(crystal)
-
-                var light := OmniLight3D.new()
-                light.light_color = Color(1.0, 0.16, 0.04, 1)
-                light.light_energy = 2.2
-                light.omni_range = 7.0
-                light.position = crystal.position
-                add_child(light)
-
-    for z in [-2.0, 10.0, 23.0, 34.0]:
-        var arch_left := MeshInstance3D.new()
-        var arch_mesh := BoxMesh.new()
-        arch_mesh.size = Vector3(1.0, 5.2, 1.0)
-        arch_left.mesh = arch_mesh
-        arch_left.material_override = stone
-        arch_left.position = Vector3(-5.5, 2.6, z)
-        add_child(arch_left)
-
-        var arch_right := MeshInstance3D.new()
-        arch_right.mesh = arch_mesh
-        arch_right.material_override = stone
-        arch_right.position = Vector3(5.5, 2.6, z)
-        add_child(arch_right)
-
-        var lintel := MeshInstance3D.new()
-        var lintel_mesh := BoxMesh.new()
-        lintel_mesh.size = Vector3(12.0, 0.8, 1.1)
-        lintel.mesh = lintel_mesh
-        lintel.material_override = stone
-        lintel.position = Vector3(0, 5.0, z)
-        add_child(lintel)

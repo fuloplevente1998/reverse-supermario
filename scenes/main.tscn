@@ -198,14 +198,12 @@ grow_horizontal = 2
 grow_vertical = 2
 
 [node name="Joystick" type="Control" parent="UI/Controls"]
-layout_mode = 1
-anchors_preset = 12
-anchor_top = 1.0
-anchor_bottom = 1.0
-offset_left = 28.0
-offset_top = -300.0
-offset_right = 246.0
-offset_bottom = -80.0
+layout_mode = 0
+anchors_preset = 0
+offset_left = 32.0
+offset_top = 420.0
+offset_right = 252.0
+offset_bottom = 640.0
 script = ExtResource("5_joystick")
 
 [node name="Actions" type="Control" parent="UI/Controls"]

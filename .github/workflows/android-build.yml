@@ -71,6 +71,22 @@ jobs:
             exit 1
           fi
 
+      - name: Capture gameplay previews
+        shell: bash
+        run: |
+          GODOT="$(find "$HOME/.local/share/godot/godot_executable" -maxdepth 1 -type f -name 'Godot*_linux.x86_64' -print -quit)"
+          timeout 90s xvfb-run -a "$GODOT" --path . --rendering-method gl_compatibility --script res://tests/preview_capture.gd 2>&1 | tee preview.log
+          if grep -E 'SCRIPT ERROR|ERROR:' preview.log; then
+            exit 1
+          fi
+
+      - name: Upload gameplay previews
+        uses: actions/upload-artifact@v4
+        with:
+          name: gameplay-previews
+          path: previews/*.png
+          if-no-files-found: error
+
       - name: Find APK
         id: apk
         shell: bash

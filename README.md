@@ -34,3 +34,25 @@ Godot 4.7.2 stable, Mobile renderer.
 ## IP note
 
 “Fordított SuperMario” is a concept nickname only. This repository contains no Nintendo assets, characters, level data, audio or code. The production game should use fully original names and assets.
+
+
+## 0.0.7 — distinct stages and mobile controls
+
+The joystick now uses explicit top-left anchors and a fixed 220×220 area. Its center is at 73% of screen height. Tests verify the actual control rectangle at three viewport sizes and release outside its touch area.
+
+| Stage | Main challenge |
+| --- | --- |
+| 1 Várudvar | Staggered jump hurdles and introductory guards |
+| 2 Törött híd | Moving bridges, barricades and a moving saw |
+| 3 Tüskekert | Alternating hedge maze and timed spikes |
+| 4 Jéggerinc | Low-friction ice patches, pillars and gaps |
+| 5 Parázskohó | Alternating fire jets and cover |
+| 6 Fűrészmalom | Three sweeping saws and moving bridges |
+| 7 Őrtorony | Two stair ridges and ranged guards |
+| 8 Hídlánc | Four moving bridge crossings |
+| 9 Alkonyút | Mixed fire, saw, spike and wall obstacles |
+| 10 Trónőrség | Arena cover and a captain required to finish |
+
+All ten stages support Easy/Normal/Hard. Difficulty affects health, damage, enemy count, trap timing, bridge width and movement. Five enemy types: guard, quick scout, frontal-armored brute, ranged archer and captain. Attacks have visible windup markers; shots collide with cover. Brutes take full damage from behind or while preparing an attack. The stage menu pauses gameplay.
+
+CI checks 30 stage/difficulty combinations and captures desktop compatibility-renderer previews. Android uses Mobile renderer; device frame rate, touch feel and Vulkan appearance still need phone testing.

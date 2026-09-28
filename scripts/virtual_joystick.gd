@@ -8,7 +8,33 @@ var thumb := Vector2.ZERO
 
 func _ready() -> void:
     mouse_filter = Control.MOUSE_FILTER_STOP
+    _layout()
+    get_viewport().size_changed.connect(_layout)
+    visibility_changed.connect(_reset_pointer)
+    get_parent().resized.connect(_layout)
+
+func _layout() -> void:
+    # Set every anchor explicitly: the former bottom-wide preset stretched the base.
+    set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
+    size = Vector2(220, 220)
+    var viewport_size := get_viewport_rect().size
+    position = Vector2(32, maxf(180.0, viewport_size.y * 0.73 - 110.0))
     queue_redraw()
+
+func _reset_pointer() -> void:
+    pointer = -1
+    mouse_active = false
+    _release()
+
+func _input(event: InputEvent) -> void:
+    if event is InputEventScreenTouch and not event.pressed and event.index == pointer:
+        _reset_pointer()
+    elif event is InputEventMouseButton and not event.pressed and mouse_active:
+        _reset_pointer()
+
+func _notification(what: int) -> void:
+    if what == NOTIFICATION_APPLICATION_FOCUS_OUT:
+        _reset_pointer()
 
 func _draw() -> void:
     var center := size * 0.5

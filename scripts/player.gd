@@ -13,6 +13,7 @@ signal damage_taken(amount: int, blocked: bool)
 @export var attack_range: float = 2.8
 @export var attack_cooldown: float = 0.38
 
+var surface_acceleration := 1.0
 var hp: int = 100
 var blocking: bool = false
 var attack_ready: bool = true
@@ -74,14 +75,14 @@ func _physics_process(delta: float) -> void:
         speed *= input_vec.length()
         if blocking:
             speed *= 0.48
-        velocity.x = move_toward(velocity.x, direction.x * speed, acceleration * delta)
-        velocity.z = move_toward(velocity.z, direction.z * speed, acceleration * delta)
+        velocity.x = move_toward(velocity.x, direction.x * speed, acceleration * surface_acceleration * delta)
+        velocity.z = move_toward(velocity.z, direction.z * speed, acceleration * surface_acceleration * delta)
         rotation.y = lerp_angle(rotation.y, atan2(direction.x, direction.z), minf(1.0, delta * 14.0))
         if visual_root:
             visual_root.position.y = sin(Time.get_ticks_msec() * 0.021) * 0.045
     else:
-        velocity.x = move_toward(velocity.x, 0.0, acceleration * delta)
-        velocity.z = move_toward(velocity.z, 0.0, acceleration * delta)
+        velocity.x = move_toward(velocity.x, 0.0, acceleration * surface_acceleration * delta)
+        velocity.z = move_toward(velocity.z, 0.0, acceleration * surface_acceleration * delta)
         if visual_root:
             visual_root.position.y = move_toward(visual_root.position.y, 0.0, delta * 0.5)
 

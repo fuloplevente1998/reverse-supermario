@@ -3,6 +3,8 @@ name: Android Debug APK
 on:
   push:
     branches: [ "main", "feature/0.0.8-blender-villain" ]
+  pull_request:
+    branches: [ "main" ]
   workflow_dispatch:
 
 jobs:

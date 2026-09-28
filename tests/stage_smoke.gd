@@ -36,7 +36,7 @@ func _verify() -> void:
         quit(1)
         return
     for boundary in ["BoundaryWest", "BoundaryEast", "BoundaryRear", "BoundaryFront"]:
-        if stage_one.get_node_or_null(boundary + "/CollisionShape3D") == null:
+        if stage_one.get_node_or_null(boundary + "/Collision") == null:
             push_error("Stage one has no %s" % boundary)
             quit(1)
             return
@@ -79,7 +79,7 @@ func _verify() -> void:
                 quit(1)
                 return
             for boundary in ["BoundaryWest", "BoundaryEast", "BoundaryRear", "BoundaryFront"]:
-                if stage.get_node_or_null(boundary + "/CollisionShape3D") == null:
+                if stage.get_node_or_null(boundary + "/Collision") == null:
                     push_error("Stage %d has no %s" % [number, boundary])
                     quit(1)
                     return

@@ -456,6 +456,7 @@ func _boundary(node_name: String, center: Vector3, dimensions: Vector3, stone: M
     body.position = center
     add_child(body)
     var collision := CollisionShape3D.new()
+    collision.name = "Collision"
     var shape := BoxShape3D.new()
     shape.size = dimensions
     collision.shape = shape

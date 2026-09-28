@@ -224,6 +224,8 @@ if __name__ == "__main__":
     source = Path(args.source).resolve()
     output.mkdir(parents=True, exist_ok=True)
     source.mkdir(parents=True, exist_ok=True)
+    # Keep the editable .blend archives for GitHub artifacts, not Godot imports.
+    (source / ".gdignore").touch()
     villain(output, source)
     gate(output, source)
     print("ART GENERATION COMPLETE", flush=True)

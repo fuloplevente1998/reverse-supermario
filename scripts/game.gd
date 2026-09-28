@@ -1,5 +1,10 @@
 extends Node3D
 
+@export_range(1, 2) var stage_number := 1
+const StageTwo = preload("res://scripts/stage_two.gd")
+const SECOND_STAGE := "res://scenes/stage2.tscn"
+const SAVE_PATH := "user://reverse_platformer_progress.cfg"
+
 @onready var player = $Player
 @onready var hp_label: Label = $UI/TopBar/HP
 @onready var status_label: Label = $UI/Status
@@ -16,16 +21,39 @@ var enemies_total := 0
 var enemies_defeated := 0
 var ended := false
 var status_tween: Tween
+var next_button: Button
+var stage_button: Button
+var checkpoint_position := Vector3(0, 1.1, -10)
 
 func _ready() -> void:
     process_mode = Node.PROCESS_MODE_ALWAYS
     _setup_environment()
     _build_world_details()
-    preload("res://scripts/art.gd").courtyard(self)
+    if stage_number == 1:
+        preload("res://scripts/art.gd").courtyard(self)
+    else:
+        StageTwo.build(self)
     _style_interface()
     _connect_gameplay()
     _bind_touch_buttons()
     _on_hp_changed(player.hp)
+
+func _physics_process(_delta: float) -> void:
+    if stage_number == 2 and not ended and player.global_position.y < -6.0:
+        player.global_position = checkpoint_position
+        player.velocity = Vector3.ZERO
+        player.take_damage(25)
+        if not ended:
+            _pulse_status("VISSZA AZ ELLENŐRZŐPONTRA -25")
+
+func _on_trap_entered(body: Node3D) -> void:
+    if body == player and not ended:
+        player.take_damage(20)
+
+func _on_checkpoint_entered(body: Node3D) -> void:
+    if body == player and not ended:
+        checkpoint_position = Vector3(0, 1.1, 18.0)
+        _pulse_status("ELLENŐRZŐPONT AKTÍV")
 
 func _connect_gameplay() -> void:
     player.hp_changed.connect(_on_hp_changed)
@@ -62,7 +90,7 @@ func _style_interface() -> void:
     $UI/TopBar.add_child(hp_text)
 
     objective_label = Label.new()
-    objective_label.text = "CÉL: TÖRD ÁT A HŐSÖK VÉDELMÉT ÉS ÉRD EL A KAPUT"
+    objective_label.text = "2. PÁLYA: UGORJ ÁT A RÉSEKEN, KERÜLD A TÜSKÉKET" if stage_number == 2 else "1. PÁLYA: TÖRD ÁT A HŐSÖK VÉDELMÉT"
     objective_label.position = Vector2(24, 78)
     objective_label.add_theme_font_size_override("font_size", 18)
     $UI.add_child(objective_label)
@@ -92,6 +120,17 @@ func _style_interface() -> void:
     restart_button.add_theme_font_size_override("font_size", 25)
     restart_button.custom_minimum_size = Vector2(300, 92)
 
+    next_button = Button.new()
+    next_button.text = "KÖVETKEZŐ PÁLYA"
+    next_button.position = Vector2(480, 235)
+    next_button.size = Vector2(320, 78)
+    next_button.add_theme_font_size_override("font_size", 24)
+    next_button.focus_mode = Control.FOCUS_NONE
+    next_button.z_index = 120
+    next_button.visible = false
+    $UI.add_child(next_button)
+    next_button.pressed.connect(_open_second_stage)
+
     controls.z_index = 10
 
     vignette = ColorRect.new()
@@ -109,6 +148,14 @@ func _style_interface() -> void:
     view_button.focus_mode = Control.FOCUS_NONE
     controls.add_child(view_button)
     view_button.pressed.connect($Player/CameraPivot.toggle_view)
+    stage_button = Button.new()
+    stage_button.position = Vector2(1000, 98)
+    stage_button.size = Vector2(250, 57)
+    stage_button.text = "1. PÁLYA" if stage_number == 2 else "2. PÁLYA"
+    stage_button.visible = stage_number == 2 or _is_second_stage_unlocked()
+    stage_button.focus_mode = Control.FOCUS_NONE
+    controls.add_child(stage_button)
+    stage_button.pressed.connect(_switch_stage)
     _style_control_buttons()
 
 func _style_control_buttons() -> void:
@@ -174,7 +221,34 @@ func _on_player_died() -> void:
 
 func _on_goal_body_entered(body: Node) -> void:
     if body == player and not ended:
-        _finish_game("A KAPUT ELÉRTED")
+        if stage_number == 1:
+            _unlock_second_stage()
+            _finish_game("A KAPUT ELÉRTED")
+            next_button.visible = true
+            next_button.move_to_front()
+        else:
+            _finish_game("A MÁSODIK PÁLYÁT TELJESÍTETTED")
+
+func _is_second_stage_unlocked() -> bool:
+    var progress := ConfigFile.new()
+    if progress.load(SAVE_PATH) != OK:
+        return false
+    return int(progress.get_value("progress", "unlocked_stage", 1)) >= 2
+
+func _unlock_second_stage() -> void:
+    var progress := ConfigFile.new()
+    progress.load(SAVE_PATH)
+    progress.set_value("progress", "unlocked_stage", 2)
+    var result := progress.save(SAVE_PATH)
+    if result != OK:
+        push_error("Unable to save unlocked stage: %s" % result)
+
+func _open_second_stage() -> void:
+    get_tree().call_deferred("change_scene_to_file", SECOND_STAGE)
+
+func _switch_stage() -> void:
+    var scene_path := "res://scenes/main.tscn" if stage_number == 2 else SECOND_STAGE
+    get_tree().call_deferred("change_scene_to_file", scene_path)
 
 func _finish_game(message: String) -> void:
     ended = true
@@ -323,4 +397,3 @@ func _build_world_details() -> void:
         lintel.material_override = stone
         lintel.position = Vector3(0, 5.0, z)
         add_child(lintel)
-

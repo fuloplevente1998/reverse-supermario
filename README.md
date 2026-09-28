@@ -1,6 +1,6 @@
 # Reverse Platformer (working title)
 
-Android third-person action-platformer prototype built with Godot 4 Mobile renderer.
+Android third-person action-platformer prototype built with Godot 4 Mobile renderer. Two playable levels: castle courtyard and the guard's broken bridge.
 
 See `FORDITOTT_SUPERMARIO_PROJECT.md` for the complete Hungarian design summary.
 
@@ -16,6 +16,8 @@ Desktop:
 Android:
 - on-screen directional/action buttons
 - NÉZETVÁLTÁS: switch camera; in side view, right moves toward the gate
+
+Reaching the first gate unlocks level two and saves progress locally. The second level adds moving bridges, spike traps, a checkpoint, and a separate finish. Falling into a gap costs health and returns the player to the latest checkpoint. Use the next-level button at the first gate or the stage button after unlocking it.
 
 ## Art pipeline
 

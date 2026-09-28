@@ -14,8 +14,10 @@ Desktop:
 - C: switch between behind-the-character and side camera
 
 Android:
-- left virtual joystick and jump/attack/block buttons
+- left virtual joystick around the lower two-thirds of the screen and jump/attack/block buttons
 - NÉZETVÁLTÁS: switch camera; in side view, right moves toward the gate
+
+The game opens on a start screen with Continue/Start, level selection and difficulty. The in-game menu and end screen return to the start screen. All ten stages have solid outer boundaries with visible low railings, while their intentional internal jump gaps remain. The scene uses brighter daylight and lighter ground materials.
 
 Each gate unlocks the next level and saves progress locally. The second level adds moving bridges, spike traps and a checkpoint. Levels 3–10 use one stage template and eight authored recipes with deterministic decoration, fixed jump distances and different colors, guard placements and hazards. Falling into a gap costs health and returns the player to the latest checkpoint. The PÁLYÁK menu shows unlocked levels and lets you choose KÖNNYŰ, NORMÁL or NEHÉZ; changing difficulty restarts the current level.
 

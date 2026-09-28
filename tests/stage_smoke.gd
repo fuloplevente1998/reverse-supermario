@@ -9,6 +9,20 @@ func _verify() -> void:
     progress.set_value("progress", "difficulty", 1)
     progress.save("user://reverse_platformer_progress.cfg")
 
+    var title = load("res://scenes/title.tscn").instantiate()
+    root.add_child(title)
+    await process_frame
+    if title.get_node_or_null("Stage1") != null or title.stage_panel.get_node_or_null("Stage1") == null:
+        push_error("Title level selection failed to load")
+        quit(1)
+        return
+    if title.stage_panel.get_node("Stage2").disabled != true:
+        push_error("Title exposes a locked stage")
+        quit(1)
+        return
+    title.queue_free()
+    await process_frame
+
     var stage_one = load("res://scenes/main.tscn").instantiate()
     root.add_child(stage_one)
     await process_frame
@@ -17,6 +31,15 @@ func _verify() -> void:
         quit(1)
         return
     var joystick = stage_one.get_node("UI/Controls/Joystick")
+    if joystick.position.y > 440 or joystick.position.x > 40:
+        push_error("Joystick is not placed in the lower left")
+        quit(1)
+        return
+    for boundary in ["BoundaryWest", "BoundaryEast", "BoundaryRear", "BoundaryFront"]:
+        if stage_one.get_node_or_null(boundary + "/CollisionShape3D") == null:
+            push_error("Stage one has no %s" % boundary)
+            quit(1)
+            return
     var press := InputEventScreenTouch.new()
     press.index = 3
     press.pressed = true
@@ -55,6 +78,11 @@ func _verify() -> void:
                 push_error("Joystick missing from stage %d" % number)
                 quit(1)
                 return
+            for boundary in ["BoundaryWest", "BoundaryEast", "BoundaryRear", "BoundaryFront"]:
+                if stage.get_node_or_null(boundary + "/CollisionShape3D") == null:
+                    push_error("Stage %d has no %s" % [number, boundary])
+                    quit(1)
+                    return
             if number >= 3 and stage.get_node_or_null("GeneratedFloor0") == null:
                 push_error("Generated obstacles missing from stage %d" % number)
                 quit(1)

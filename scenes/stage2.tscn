@@ -44,7 +44,7 @@ size = Vector3(5, 1, 5)
 size = Vector3(5, 1, 5)
 
 [sub_resource type="StandardMaterial3D" id="GroundMat"]
-albedo_color = Color(0.18, 0.32, 0.19, 1)
+albedo_color = Color(0.29, 0.42, 0.31, 1)
 
 [sub_resource type="StandardMaterial3D" id="PlayerMat"]
 albedo_color = Color(0.35, 0.08, 0.12, 1)
@@ -204,9 +204,9 @@ anchors_preset = 12
 anchor_top = 1.0
 anchor_bottom = 1.0
 offset_left = 28.0
-offset_top = -256.0
-offset_right = 264.0
-offset_bottom = -20.0
+offset_top = -300.0
+offset_right = 246.0
+offset_bottom = -80.0
 script = ExtResource("5_joystick")
 
 [node name="Actions" type="Control" parent="UI/Controls"]

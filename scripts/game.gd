@@ -39,6 +39,7 @@ func _ready() -> void:
         StageTwo.build(self)
     else:
         StageGenerator.build(self, stage_number)
+    _build_boundaries()
     _apply_difficulty()
     _style_interface()
     _connect_gameplay()
@@ -162,6 +163,13 @@ func _style_interface() -> void:
     stage_button.focus_mode = Control.FOCUS_NONE
     controls.add_child(stage_button)
     stage_button.pressed.connect(_open_stage_panel)
+    var home_button := Button.new()
+    home_button.text = "FŐMENÜ"
+    home_button.position = Vector2(1000, 165)
+    home_button.size = Vector2(250, 55)
+    home_button.focus_mode = Control.FOCUS_NONE
+    controls.add_child(home_button)
+    home_button.pressed.connect(_go_home)
     $UI/Controls/Joystick.changed.connect(player.set_touch_axis)
     _build_stage_panel()
     _style_control_buttons()
@@ -310,6 +318,12 @@ func _build_stage_panel() -> void:
     close.size = Vector2(365, 76)
     stage_panel.add_child(close)
     close.pressed.connect(_close_stage_panel)
+    var home := Button.new()
+    home.text = "FŐMENÜ"
+    home.position = Vector2(475, 449)
+    home.size = Vector2(365, 60)
+    stage_panel.add_child(home)
+    home.pressed.connect(_go_home)
 
 func _difficulty_text() -> String:
     var names := ["KÖNNYŰ", "NORMÁL", "NEHÉZ"]
@@ -343,6 +357,10 @@ func _open_next_stage() -> void:
     if stage_number < 10:
         get_tree().call_deferred("change_scene_to_file", _stage_path(stage_number + 1))
 
+func _go_home() -> void:
+    player.set_touch_axis(Vector2.ZERO)
+    get_tree().call_deferred("change_scene_to_file", "res://scenes/title.tscn")
+
 func _finish_game(message: String) -> void:
     ended = true
     if status_tween:
@@ -357,6 +375,14 @@ func _finish_game(message: String) -> void:
     restart_button.disabled = false
     restart_button.mouse_filter = Control.MOUSE_FILTER_STOP
     restart_button.move_to_front()
+    var home := Button.new()
+    home.text = "FŐMENÜ"
+    home.position = Vector2(490, 335)
+    home.size = Vector2(300, 66)
+    home.z_index = 120
+    home.focus_mode = Control.FOCUS_NONE
+    $UI.add_child(home)
+    home.pressed.connect(_go_home)
     status_label.move_to_front()
     player.set_physics_process(false)
     controls.visible = false
@@ -395,23 +421,53 @@ func _setup_environment() -> void:
     env.background_mode = Environment.BG_SKY
     var sky := Sky.new()
     var sky_mat := ProceduralSkyMaterial.new()
-    sky_mat.sky_top_color = Color(0.045, 0.11, 0.2, 1)
-    sky_mat.sky_horizon_color = Color(0.56, 0.38, 0.29, 1)
-    sky_mat.ground_bottom_color = Color(0.015, 0.018, 0.028, 1)
-    sky_mat.ground_horizon_color = Color(0.11, 0.055, 0.07, 1)
+    sky_mat.sky_top_color = Color(0.12, 0.22, 0.34, 1)
+    sky_mat.sky_horizon_color = Color(0.71, 0.51, 0.4, 1)
+    sky_mat.ground_bottom_color = Color(0.09, 0.13, 0.17, 1)
+    sky_mat.ground_horizon_color = Color(0.27, 0.21, 0.24, 1)
     sky_mat.sun_angle_max = 12.0
     sky.sky_material = sky_mat
     env.sky = sky
     env.ambient_light_source = Environment.AMBIENT_SOURCE_SKY
-    env.ambient_light_energy = 0.85
+    env.ambient_light_energy = 1.15
     env.tonemap_mode = Environment.TONE_MAPPER_FILMIC
     env.glow_enabled = false # Mobile: use emissive materials without post-process bloom.
     env.fog_enabled = true
-    env.fog_light_color = Color(0.2, 0.08, 0.1, 1)
+    env.fog_light_color = Color(0.36, 0.3, 0.3, 1)
     env.fog_light_energy = 0.55
-    env.fog_density = 0.004
+    env.fog_density = 0.003
     env.fog_height = 0.0
     $WorldEnvironment.environment = env
+    $Sun.light_energy = 1.3
+
+func _build_boundaries() -> void:
+    var half_width := 17.7 if stage_number == 1 else (8.2 if stage_number == 2 else 8.7)
+    var stone := StandardMaterial3D.new()
+    stone.albedo_color = Color(0.49, 0.57, 0.6)
+    stone.roughness = 0.92
+    _boundary("BoundaryWest", Vector3(-half_width, 5, 15), Vector3(0.5, 12, 60), stone)
+    _boundary("BoundaryEast", Vector3(half_width, 5, 15), Vector3(0.5, 12, 60), stone)
+    _boundary("BoundaryRear", Vector3(0, 5, -14.7), Vector3(half_width * 2, 12, 0.5), stone)
+    _boundary("BoundaryFront", Vector3(0, 5, 44.7), Vector3(half_width * 2, 12, 0.5), stone)
+
+func _boundary(node_name: String, center: Vector3, dimensions: Vector3, stone: Material) -> void:
+    var body := StaticBody3D.new()
+    body.name = node_name
+    body.position = center
+    add_child(body)
+    var collision := CollisionShape3D.new()
+    var shape := BoxShape3D.new()
+    shape.size = dimensions
+    collision.shape = shape
+    body.add_child(collision)
+    # Low visible masonry; the tall collision prevents jumping outside.
+    var railing := MeshInstance3D.new()
+    var mesh := BoxMesh.new()
+    mesh.size = Vector3(dimensions.x, 1.0, dimensions.z)
+    railing.mesh = mesh
+    railing.material_override = stone
+    railing.position.y = -4.75
+    body.add_child(railing)
 
 func _build_world_details() -> void:
     var stone := StandardMaterial3D.new()

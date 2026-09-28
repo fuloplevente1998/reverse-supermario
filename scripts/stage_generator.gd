@@ -35,6 +35,7 @@ static func build(game: Node3D, number: int) -> void:
             game.remove_child(old)
             old.queue_free()
     var stone := Art.material(recipe["color"])
+    stone.roughness = 0.95
     var trim := Art.material(Color("#dbbd7f"), 0.3)
     var gaps: Array = recipe["gaps"]
     var start := -15.0

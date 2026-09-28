@@ -19,13 +19,13 @@ Android:
 
 The game opens on a start screen with Continue/Start, level selection and difficulty. The in-game menu and end screen return to the start screen. All ten stages have solid outer boundaries with visible low railings, while their intentional internal jump gaps remain. The scene uses brighter daylight and lighter ground materials.
 
-Each gate unlocks the next level and saves progress locally. The second level adds moving bridges, spike traps and a checkpoint. Levels 3–10 use one stage template and eight authored recipes with deterministic decoration, fixed jump distances and different colors, guard placements and hazards. Falling into a gap costs health and returns the player to the latest checkpoint. The PÁLYÁK menu shows unlocked levels and lets you choose KÖNNYŰ, NORMÁL or NEHÉZ; changing difficulty restarts the current level.
+Each gate unlocks the next level and saves progress locally. The final gate requires defeating the captain. Ten authored stage layouts introduce jump hurdles, moving bridges, timed spikes, fire jets, sweeping saws, ice patches and stair ridges. Falling into a gap costs health and returns the player to the latest checkpoint. The PÁLYÁK menu pauses gameplay and allows unlocked level selection; changing difficulty restarts the current level.
 
 The Android preview uses package `com.fuloplevente.reverseplatformer.preview`, so it installs beside the earlier prototype. Its debug signing key is cached in GitHub Actions for subsequent test builds. The cache can expire; a production release must use a privately stored release signing key.
 
 ## Art pipeline
 
-The current first level has original procedural 3D armor, animated cape, paved courtyard, trees and castle gate. It runs as a native Godot game. Detailed models and animations can be authored in Blender and exported as glTF 2.0 (.glb) into Godot. Keep a source .blend file and exported .glb together, use small shared materials and texture atlases, and profile the result on Android hardware.
+The current stages use original procedural 3D armor, animated cape, trees, pillars and castle gates. It runs as a native Godot game. Detailed models and animations can be authored in Blender and exported as glTF 2.0 (.glb) into Godot. Keep a source .blend file and exported .glb together, use small shared materials and texture atlases, and profile the result on Android hardware.
 
 ## Engine
 

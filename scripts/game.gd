@@ -436,8 +436,9 @@ func _setup_environment() -> void:
     sky_mat.sun_angle_max = 12.0
     sky.sky_material = sky_mat
     env.sky = sky
-    env.ambient_light_source = Environment.AMBIENT_SOURCE_SKY
-    env.ambient_light_energy = 1.15
+    env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
+    env.ambient_light_color = Color(0.72, 0.8, 0.9)
+    env.ambient_light_energy = 0.45
     env.tonemap_mode = Environment.TONE_MAPPER_FILMIC
     env.glow_enabled = false # Mobile: use emissive materials without post-process bloom.
     env.fog_enabled = true
@@ -446,7 +447,7 @@ func _setup_environment() -> void:
     env.fog_density = 0.003
     env.fog_height = 0.0
     $WorldEnvironment.environment = env
-    $Sun.light_energy = 1.3
+    $Sun.light_energy = 0.85
 
 func _build_boundaries() -> void:
     var half_width := StageGenerator.width(stage_number) * 0.5 - 0.3

@@ -1,6 +1,6 @@
 # Reverse Platformer (working title)
 
-Android third-person action-platformer prototype built with Godot 4 Mobile renderer. Ten playable levels, three difficulty settings, touch joystick, and switchable cameras.
+Android third-person action-platformer prototype built with Godot 4 Mobile renderer. Ten playable levels, three difficulty settings, touch joystick, and switchable cameras. You play the attacking villain, breaking through the castle's defenders to reach the princess.
 
 See `FORDITOTT_SUPERMARIO_PROJECT.md` for the complete Hungarian design summary.
 
@@ -56,3 +56,13 @@ The joystick now uses explicit top-left anchors and a fixed 220×220 area. Its c
 All ten stages support Easy/Normal/Hard. Difficulty affects health, damage, enemy count, trap timing, bridge width and movement. Five enemy types: guard, quick scout, frontal-armored brute, ranged archer and captain. Attacks have visible windup markers; shots collide with cover. Brutes take full damage from behind or while preparing an attack. The stage menu pauses gameplay.
 
 CI checks 30 stage/difficulty combinations and captures desktop compatibility-renderer previews. Android uses Mobile renderer; device frame rate, touch feel and Vulkan appearance still need phone testing.
+
+## 0.0.8 — Blender villain and fortress gate (preview branch)
+
+The player is the villain, not a rescuing hero. Fight through the castle's guards, scouts, armored knights and captains across ten levels to reach the princess. The familiar plumbers are an early fan-story idea only: this public repository uses original designs and does not contain their likeness, names as playable characters, or Nintendo game assets. A distributable game needs its own rival duo or a separate license.
+
+**No local Blender installation is needed to test:** GitHub Actions installs Blender, runs `tools/blender/generate_art.py` in headless mode, creates `villain_knight.glb` and `fortress_gate.glb`, and includes them in the Android debug APK. Download the `blender-art-source-and-models` workflow artifact to get the generated editable `.blend` files and GLBs. The procedural visuals are retained as a fallback for local source checkouts without Blender.
+
+The Blender model exports keep four stable node names (`Chest`, `LegLeft`, `LegRight`, `WeaponPivot`) so Godot's existing damage flash, walk cycle, attack and blocking motion still work. Stage one loads an original modular castle gate, while stage two through ten keep the existing art for this first graphics pass. `tests/art_smoke.gd` verifies both GLBs import and the stage instantiates them; it does not replace a real Android frame-rate and gameplay test.
+
+To regenerate in Blender locally later: `blender --background --factory-startup --python tools/blender/generate_art.py -- --output assets/models --source build/blender`. CI generates the same files without requiring a developer PC.

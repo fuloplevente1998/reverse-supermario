@@ -16,7 +16,7 @@ jobs:
         uses: actions/checkout@v5
 
       - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
+        uses: android-actions/setup-android@v4
 
       - name: Export Android debug APK
         id: export

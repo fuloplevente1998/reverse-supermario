@@ -31,7 +31,7 @@ func _draw() -> void:
 func _build_menu() -> void:
     _label("FULTECH STUDIOS  /  KORONA ÁRNYÉKA", Vector2(70, 47), 22, Color("#f1c28d"))
     _label("A VÁR KAPUJÁIG", Vector2(70, 119), 49, Color("#f8f1df"))
-    _label("Indulj a gonosz oldaláról. Győzd le az őröket,\nés juss el a hercegnő váráig!", Vector2(74, 195), 23, Color("#c8d9df"))
+    _label("TE VAGY A FŐGONOSZ. TÖRD ÁT AZ ŐRSÉGET,\nés küzdd át magad a hercegnő váráig!", Vector2(74, 195), 23, Color("#c8d9df"))
     _label("10 PÁLYA     •     3 NEHÉZSÉG     •     2 KAMERANÉZET", Vector2(74, 292), 17, Color("#f1c28d"))
     var play_text := "FOLYTATÁS — %d. PÁLYA" % unlocked_stage if unlocked_stage > 1 else "JÁTÉK INDÍTÁSA"
     _button(play_text, Vector2(72, 358), Vector2(390, 72), _start)

@@ -62,7 +62,6 @@ def bevel(obj, amount=0.025, segments=2):
     modifier = obj.modifiers.new("Soft light-catching edges", "BEVEL")
     modifier.width = amount
     modifier.segments = segments
-    modifier.affect = "EDGES" if hasattr(modifier, "affect") else None
     bpy.context.view_layer.objects.active = obj
     bpy.ops.object.modifier_apply(modifier=modifier.name)
     return obj

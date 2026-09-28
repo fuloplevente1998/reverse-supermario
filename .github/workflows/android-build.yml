@@ -18,6 +18,25 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v4
 
+      # This is a separate preview app. Keep its signing identity between CI runs.
+      - name: Restore preview signing key
+        uses: actions/cache@v4
+        with:
+          path: ~/.local/share/reverse-platformer/preview-debug.keystore
+          key: reverse-platformer-preview-debug-signing-v1
+
+      - name: Prepare preview signing key
+        shell: bash
+        run: |
+          STORE="$HOME/.local/share/reverse-platformer/preview-debug.keystore"
+          mkdir -p "$(dirname "$STORE")"
+          if [ ! -f "$STORE" ]; then
+            keytool -genkeypair -noprompt -keystore "$STORE" -storepass android -keypass android -alias androiddebugkey -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Reverse Platformer Preview,O=FulTech Studios,C=HU"
+          fi
+          echo "GODOT_ANDROID_KEYSTORE_DEBUG_PATH=$STORE" >> "$GITHUB_ENV"
+          echo "GODOT_ANDROID_KEYSTORE_DEBUG_USER=androiddebugkey" >> "$GITHUB_ENV"
+          echo "GODOT_ANDROID_KEYSTORE_DEBUG_PASSWORD=android" >> "$GITHUB_ENV"
+
       - name: Export Android debug APK
         id: export
         uses: firebelley/godot-export@v8.0.0

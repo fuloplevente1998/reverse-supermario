@@ -19,6 +19,8 @@ Android:
 
 Reaching the first gate unlocks level two and saves progress locally. The second level adds moving bridges, spike traps, a checkpoint, and a separate finish. Falling into a gap costs health and returns the player to the latest checkpoint. Use the next-level button at the first gate or the stage button after unlocking it.
 
+The Android preview uses package `com.fuloplevente.reverseplatformer.preview`, so it installs beside the earlier prototype. Its debug signing key is cached in GitHub Actions for subsequent test builds. The cache can expire; a production release must use a privately stored release signing key.
+
 ## Art pipeline
 
 The current first level has original procedural 3D armor, animated cape, paved courtyard, trees and castle gate. It runs as a native Godot game. Detailed models and animations can be authored in Blender and exported as glTF 2.0 (.glb) into Godot. Keep a source .blend file and exported .glb together, use small shared materials and texture atlases, and profile the result on Android hardware.

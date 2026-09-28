@@ -25,6 +25,7 @@ var touch_right: bool = false
 var touch_jump: bool = false
 var touch_attack: bool = false
 var touch_block: bool = false
+var touch_axis := Vector2.ZERO
 
 var visual_root: Node3D
 var body_mesh: MeshInstance3D
@@ -58,7 +59,7 @@ func _physics_process(delta: float) -> void:
         float(int(touch_right) - int(touch_left)),
         float(int(touch_forward) - int(touch_back))
     )
-    var input_vec := touch_vec if touch_vec.length_squared() > 0.01 else keyboard_vec
+    var input_vec := touch_axis if touch_axis.length_squared() > 0.01 else (touch_vec if touch_vec.length_squared() > 0.01 else keyboard_vec)
     if input_vec.length() > 1.0:
         input_vec = input_vec.normalized()
 
@@ -70,6 +71,7 @@ func _physics_process(delta: float) -> void:
         if camera_pivot.get("side_view"):
             direction = Vector3(-input_vec.y, 0.0, input_vec.x).normalized()
         var speed := move_speed
+        speed *= input_vec.length()
         if blocking:
             speed *= 0.48
         velocity.x = move_toward(velocity.x, direction.x * speed, acceleration * delta)
@@ -166,6 +168,9 @@ func set_touch_action(action: StringName, pressed: bool) -> void:
                 Input.action_press(action)
             else:
                 Input.action_release(action)
+
+func set_touch_axis(axis: Vector2) -> void:
+    touch_axis = axis
 
 func _build_character_visual() -> void:
     var old_mesh := get_node_or_null("Mesh") as MeshInstance3D
@@ -290,4 +295,3 @@ func _damage_flash(was_blocked: bool) -> void:
     await get_tree().create_timer(0.11).timeout
     if is_instance_valid(mat):
         mat.albedo_color = original
-

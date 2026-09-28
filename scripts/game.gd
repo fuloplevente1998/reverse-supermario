@@ -1,8 +1,8 @@
 extends Node3D
 
-@export_range(1, 2) var stage_number := 1
+@export_range(1, 10) var stage_number := 1
 const StageTwo = preload("res://scripts/stage_two.gd")
-const SECOND_STAGE := "res://scenes/stage2.tscn"
+const StageGenerator = preload("res://scripts/stage_generator.gd")
 const SAVE_PATH := "user://reverse_platformer_progress.cfg"
 
 @onready var player = $Player
@@ -23,36 +23,43 @@ var ended := false
 var status_tween: Tween
 var next_button: Button
 var stage_button: Button
+var stage_panel: Control
+var difficulty_button: Button
+var difficulty_index := 1
 var checkpoint_position := Vector3(0, 1.1, -10)
 
 func _ready() -> void:
     process_mode = Node.PROCESS_MODE_ALWAYS
+    _load_difficulty()
     _setup_environment()
     _build_world_details()
     if stage_number == 1:
         preload("res://scripts/art.gd").courtyard(self)
-    else:
+    elif stage_number == 2:
         StageTwo.build(self)
+    else:
+        StageGenerator.build(self, stage_number)
+    _apply_difficulty()
     _style_interface()
     _connect_gameplay()
     _bind_touch_buttons()
     _on_hp_changed(player.hp)
 
 func _physics_process(_delta: float) -> void:
-    if stage_number == 2 and not ended and player.global_position.y < -6.0:
+    if stage_number >= 2 and not ended and player.global_position.y < -6.0:
         player.global_position = checkpoint_position
         player.velocity = Vector3.ZERO
-        player.take_damage(25)
+        player.take_damage(_hazard_damage(25))
         if not ended:
             _pulse_status("VISSZA AZ ELLENŐRZŐPONTRA -25")
 
 func _on_trap_entered(body: Node3D) -> void:
     if body == player and not ended:
-        player.take_damage(20)
+        player.take_damage(_hazard_damage(20))
 
 func _on_checkpoint_entered(body: Node3D) -> void:
     if body == player and not ended:
-        checkpoint_position = Vector3(0, 1.1, 18.0)
+        checkpoint_position = Vector3(0, 1.1, 18.0 if stage_number == 2 else 16.0)
         _pulse_status("ELLENŐRZŐPONT AKTÍV")
 
 func _connect_gameplay() -> void:
@@ -90,7 +97,7 @@ func _style_interface() -> void:
     $UI/TopBar.add_child(hp_text)
 
     objective_label = Label.new()
-    objective_label.text = "2. PÁLYA: UGORJ ÁT A RÉSEKEN, KERÜLD A TÜSKÉKET" if stage_number == 2 else "1. PÁLYA: TÖRD ÁT A HŐSÖK VÉDELMÉT"
+    objective_label.text = "%d. PÁLYA: %s — ÉRD EL A KAPUT" % [stage_number, StageGenerator.title(stage_number)]
     objective_label.position = Vector2(24, 78)
     objective_label.add_theme_font_size_override("font_size", 18)
     $UI.add_child(objective_label)
@@ -129,7 +136,7 @@ func _style_interface() -> void:
     next_button.z_index = 120
     next_button.visible = false
     $UI.add_child(next_button)
-    next_button.pressed.connect(_open_second_stage)
+    next_button.pressed.connect(_open_next_stage)
 
     controls.z_index = 10
 
@@ -151,19 +158,16 @@ func _style_interface() -> void:
     stage_button = Button.new()
     stage_button.position = Vector2(1000, 98)
     stage_button.size = Vector2(250, 57)
-    stage_button.text = "1. PÁLYA" if stage_number == 2 else "2. PÁLYA"
-    stage_button.visible = stage_number == 2 or _is_second_stage_unlocked()
+    stage_button.text = "PÁLYÁK"
     stage_button.focus_mode = Control.FOCUS_NONE
     controls.add_child(stage_button)
-    stage_button.pressed.connect(_switch_stage)
+    stage_button.pressed.connect(_open_stage_panel)
+    $UI/Controls/Joystick.changed.connect(player.set_touch_axis)
+    _build_stage_panel()
     _style_control_buttons()
 
 func _style_control_buttons() -> void:
     var buttons := [
-        $UI/Controls/Move/Up,
-        $UI/Controls/Move/Down,
-        $UI/Controls/Move/Left,
-        $UI/Controls/Move/Right,
         $UI/Controls/Actions/Jump,
         $UI/Controls/Actions/Attack,
         $UI/Controls/Actions/Block
@@ -220,35 +224,124 @@ func _on_player_died() -> void:
     _finish_game("A HŐSÖK MEGÁLLÍTOTTAK")
 
 func _on_goal_body_entered(body: Node) -> void:
-    if body == player and not ended:
-        if stage_number == 1:
-            _unlock_second_stage()
-            _finish_game("A KAPUT ELÉRTED")
-            next_button.visible = true
-            next_button.move_to_front()
-        else:
-            _finish_game("A MÁSODIK PÁLYÁT TELJESÍTETTED")
+    if body != player or ended:
+        return
+    if stage_number < 10:
+        _unlock_stage(stage_number + 1)
+        _finish_game("%d. PÁLYA TELJESÍTVE" % stage_number)
+        next_button.visible = true
+        next_button.move_to_front()
+    else:
+        _finish_game("A KÜLDETÉS TELJESÍTVE")
 
-func _is_second_stage_unlocked() -> bool:
+func _stage_path(number: int) -> String:
+    return "res://scenes/main.tscn" if number == 1 else "res://scenes/stage%d.tscn" % number
+
+func _unlocked_stage() -> int:
     var progress := ConfigFile.new()
     if progress.load(SAVE_PATH) != OK:
-        return false
-    return int(progress.get_value("progress", "unlocked_stage", 1)) >= 2
+        return 1
+    return clampi(int(progress.get_value("progress", "unlocked_stage", 1)), 1, 10)
 
-func _unlock_second_stage() -> void:
+func _is_stage_unlocked(number: int) -> bool:
+    return number <= _unlocked_stage()
+
+func _unlock_stage(number: int) -> void:
     var progress := ConfigFile.new()
     progress.load(SAVE_PATH)
-    progress.set_value("progress", "unlocked_stage", 2)
-    var result := progress.save(SAVE_PATH)
-    if result != OK:
-        push_error("Unable to save unlocked stage: %s" % result)
+    progress.set_value("progress", "unlocked_stage", maxi(_unlocked_stage(), number))
+    if progress.save(SAVE_PATH) != OK:
+        push_error("Unable to save unlocked stage")
 
-func _open_second_stage() -> void:
-    get_tree().call_deferred("change_scene_to_file", SECOND_STAGE)
+func _load_difficulty() -> void:
+    var progress := ConfigFile.new()
+    progress.load(SAVE_PATH)
+    difficulty_index = clampi(int(progress.get_value("progress", "difficulty", 1)), 0, 2)
 
-func _switch_stage() -> void:
-    var scene_path := "res://scenes/main.tscn" if stage_number == 2 else SECOND_STAGE
-    get_tree().call_deferred("change_scene_to_file", scene_path)
+func _apply_difficulty() -> void:
+    var player_health := [120, 100, 80]
+    var enemy_health := [0.75, 1.0, 1.3]
+    var enemy_damage := [0.7, 1.0, 1.4]
+    player.max_hp = player_health[difficulty_index]
+    player.hp = player.max_hp
+    for enemy in get_tree().get_nodes_in_group("enemies"):
+        enemy.max_hp = maxi(1, roundi(enemy.max_hp * enemy_health[difficulty_index]))
+        enemy.hp = enemy.max_hp
+        enemy.damage = maxi(1, roundi(enemy.damage * enemy_damage[difficulty_index]))
+        enemy.move_speed *= [0.85, 1.0, 1.12][difficulty_index]
+
+func _hazard_damage(amount: int) -> int:
+    return maxi(1, roundi(amount * [0.75, 1.0, 1.3][difficulty_index]))
+
+func _build_stage_panel() -> void:
+    stage_panel = Control.new()
+    stage_panel.position = Vector2(190, 80)
+    stage_panel.size = Vector2(900, 540)
+    stage_panel.z_index = 150
+    stage_panel.visible = false
+    $UI.add_child(stage_panel)
+    var backdrop := ColorRect.new()
+    backdrop.color = Color(0.045, 0.065, 0.1, 0.96)
+    backdrop.size = stage_panel.size
+    stage_panel.add_child(backdrop)
+    var title := Label.new()
+    title.text = "VÁLASSZ PÁLYÁT"
+    title.position = Vector2(40, 26)
+    title.add_theme_font_size_override("font_size", 30)
+    stage_panel.add_child(title)
+    for number in range(1, 11):
+        var button := Button.new()
+        button.text = "%d. %s" % [number, StageGenerator.title(number)]
+        button.position = Vector2(40 + ((number - 1) % 5) * 168, 96 + int((number - 1) / 5) * 112)
+        button.size = Vector2(155, 88)
+        button.disabled = not _is_stage_unlocked(number)
+        button.add_theme_font_size_override("font_size", 15)
+        stage_panel.add_child(button)
+        button.pressed.connect(_select_stage.bind(number))
+    difficulty_button = Button.new()
+    difficulty_button.position = Vector2(50, 360)
+    difficulty_button.size = Vector2(370, 76)
+    difficulty_button.text = _difficulty_text()
+    stage_panel.add_child(difficulty_button)
+    difficulty_button.pressed.connect(_cycle_difficulty)
+    var close := Button.new()
+    close.text = "VISSZA A JÁTÉKHOZ"
+    close.position = Vector2(475, 360)
+    close.size = Vector2(365, 76)
+    stage_panel.add_child(close)
+    close.pressed.connect(_close_stage_panel)
+
+func _difficulty_text() -> String:
+    var names := ["KÖNNYŰ", "NORMÁL", "NEHÉZ"]
+    return "NEHÉZSÉG: %s" % names[difficulty_index]
+
+func _open_stage_panel() -> void:
+    stage_panel.visible = true
+    controls.visible = false
+    player.set_touch_axis(Vector2.ZERO)
+
+func _close_stage_panel() -> void:
+    stage_panel.visible = false
+    controls.visible = true
+
+func _cycle_difficulty() -> void:
+    difficulty_index = (difficulty_index + 1) % 3
+    var progress := ConfigFile.new()
+    progress.load(SAVE_PATH)
+    progress.set_value("progress", "difficulty", difficulty_index)
+    if progress.save(SAVE_PATH) != OK:
+        push_error("Unable to save difficulty")
+    difficulty_button.text = _difficulty_text()
+    # Restart so player and guard statistics use the same chosen difficulty.
+    get_tree().call_deferred("reload_current_scene")
+
+func _select_stage(number: int) -> void:
+    if _is_stage_unlocked(number):
+        get_tree().call_deferred("change_scene_to_file", _stage_path(number))
+
+func _open_next_stage() -> void:
+    if stage_number < 10:
+        get_tree().call_deferred("change_scene_to_file", _stage_path(stage_number + 1))
 
 func _finish_game(message: String) -> void:
     ended = true
@@ -288,10 +381,6 @@ func _restart() -> void:
 
 func _bind_touch_buttons() -> void:
     var bindings := {
-        $UI/Controls/Move/Up: "move_forward",
-        $UI/Controls/Move/Down: "move_back",
-        $UI/Controls/Move/Left: "move_left",
-        $UI/Controls/Move/Right: "move_right",
         $UI/Controls/Actions/Jump: "jump",
         $UI/Controls/Actions/Attack: "attack",
         $UI/Controls/Actions/Block: "block"

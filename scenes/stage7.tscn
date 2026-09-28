@@ -60,7 +60,7 @@ emission_energy_multiplier = 1.5
 
 [node name="Main" type="Node3D"]
 script = ExtResource("1_game")
-stage_number = 2
+stage_number = 7
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
 

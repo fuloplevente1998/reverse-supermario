@@ -45,7 +45,7 @@ func _verify() -> void:
     gate.queue_free()
     await process_frame
 
-    var first_level := load("res://scenes/main.tscn").instantiate()
+    var first_level = load("res://scenes/main.tscn").instantiate()
     root.add_child(first_level)
     await process_frame
     if first_level.get_node_or_null("FortressGateVisual") == null:

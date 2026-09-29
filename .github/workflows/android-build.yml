@@ -138,7 +138,7 @@ jobs:
         run: |
           set -euo pipefail
           GODOT="$(find "$HOME/.local/share/godot/godot_executable" -maxdepth 1 -type f -name 'Godot*_linux.x86_64' -print -quit)"
-          "$GODOT" --headless --path . --script res://tests/rigged_villain_smoke.gd 2>&1 | tee rigged-villain-smoke.log
+          timeout 90s "$GODOT" --headless --path . --script res://tests/rigged_villain_smoke.gd 2>&1 | tee rigged-villain-smoke.log
           if grep -E 'SCRIPT ERROR|ERROR:' rigged-villain-smoke.log; then
             exit 1
           fi

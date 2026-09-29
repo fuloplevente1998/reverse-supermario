@@ -237,6 +237,14 @@ static func _scenery(game: Node3D, number: int, recipe: Dictionary, stone: Mater
             else:
                 Art.cylinder(game, 0.7, 3.5 + number * 0.15, at + Vector3.UP * 1.75, stone)
                 Art.box(game, Vector3(1.7, 0.25, 1.7), at + Vector3.UP * 3.6, trim)
+    # Optional Blender visuals; do not modify gameplay collisions or goal.
+    if number == 1 and ResourceLoader.exists("res://assets/models/courtyard_environment.glb"):
+        var yard_scene := load("res://assets/models/courtyard_environment.glb") as PackedScene
+        if yard_scene:
+            var yard := yard_scene.instantiate() as Node3D
+            if yard:
+                yard.name = "CourtyardEnvironmentVisual"
+                game.add_child(yard)
     # The first stage uses the original Blender castle gateway when generated.
     # All other stages, and source checkouts without Blender, keep the fallback.
     var custom_gate := false

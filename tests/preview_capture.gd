@@ -13,11 +13,20 @@ func _capture() -> void:
         var path := "res://scenes/main.tscn" if number == 1 else "res://scenes/stage%d.tscn" % number
         var stage = load(path).instantiate()
         root.add_child(stage)
-        await process_frame
+        # Settling the capsule takes time; an immediate render falsely looks
+        # like the warlord is levitating above the pavement.
+        for _settling_frame in range(48):
+            await physics_frame
         await process_frame
         await RenderingServer.frame_post_draw
         var captured := root.get_texture().get_image()
         captured.save_png("res://previews/stage%d.png" % number)
+        if number == 1:
+            # A real camera-side frame exposes joystick/character silhouettes.
+            stage.player.get_node("CameraPivot").toggle_view()
+            await process_frame
+            await RenderingServer.frame_post_draw
+            root.get_texture().get_image().save_png("res://previews/stage1-side.png")
         stage.queue_free()
         await process_frame
     quit(0)

@@ -73,3 +73,16 @@ The image mockup is cinematic target art rather than a promise of identical real
 ## 0.0.9 preview — five distinct Blender defenders
 
 The castle assault now has five original headless-Blender defenders: blue steel guard with tower shield, fast green scout with paired knives, heavily armored brute with war hammer, hooded archer with bow and quiver, and red/gold captain with greatsword and royal shield. Generated source `.blend` files and Android-ready `.glb` imports appear in the GitHub Actions art artifact. All retain `Chest`, `LegLeft`, `LegRight` and `WeaponPivot` nodes for runtime hit, walk and attack animations; procedural fallback visuals still work without Blender assets. The unchanged ten-level campaign still needs physical Android frame-rate and touch-playtesting before release.
+
+## 0.1.0 — Rigged hero prototype (separate draft branch)
+
+This follows the 0.0.9 Blender scenery and five enemy models. The main branch is intentionally unchanged until device QA. The main character is generated with tools/blender/rigged_villain.py in headless Blender 4.0:
+
+- Original sculpt-inspired mesh components: lofted body armor and helmet, swept horns, curved gauntlets, molded pauldrons, a shaped thick cape and a separate, hand-attached broad sword.
+- Exactly three PBR materials use a common 2048×2048 base-color and metallic/roughness texture atlas with explicit UV unwrapping.
+- A skinned humanoid armature with Idle and Run animation clips; attack/block/jump/hurt controls remain while later skeletal clips are pending.
+- villain.blend, villain.glb, atlas PNGs, front/side/back preview renders are uploaded as Actions artifacts; the game loads a copy as assets/models/villain_knight.glb.
+- The Blender generator reimports the exported GLB to verify the rig and sword. Godot additionally tests Skeleton3D, Idle and Run, runtime binding and stage smoke tests.
+- Large binary .blend models stay in CI artifacts; reproducible Python generation is version-controlled.
+
+Mobile asset target below 20,000 triangles; exact count appears in build/blender/model_report.json. FPS and animation appearance require phone QA.

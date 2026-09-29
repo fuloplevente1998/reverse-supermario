@@ -194,9 +194,18 @@ func _style_control_buttons() -> void:
         $UI/Controls/Actions/Block
     ]
     for button: Button in buttons:
-        button.add_theme_font_size_override("font_size", 21)
-        button.modulate = Color(1, 1, 1, 0.82)
+        button.add_theme_font_size_override("font_size", 18)
+        button.add_theme_color_override("font_color", Color("#fff1d9"))
         button.focus_mode = Control.FOCUS_NONE
+        var backdrop := StyleBoxFlat.new()
+        backdrop.bg_color = Color(0.12, 0.15, 0.19, 0.47)
+        backdrop.border_color = Color(0.67, 0.52, 0.31, 0.65)
+        backdrop.set_border_width_all(1)
+        backdrop.set_corner_radius_all(12)
+        button.add_theme_stylebox_override("normal", backdrop)
+        var down := backdrop.duplicate() as StyleBoxFlat
+        down.bg_color = Color(0.31, 0.23, 0.15, 0.70)
+        button.add_theme_stylebox_override("pressed", down)
 
     $UI/Controls/Actions/Jump.text = "UGRÁS"
     $UI/Controls/Actions/Attack.text = "TÁMADÁS"
@@ -458,7 +467,7 @@ func _setup_environment() -> void:
     env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
     # Cool indirect fill keeps graphite armor legible from behind.
     env.ambient_light_color = Color(0.85, 0.88, 0.93)
-    env.ambient_light_energy = 0.68
+    env.ambient_light_energy = 0.38
     env.tonemap_mode = Environment.TONE_MAPPER_FILMIC
     env.glow_enabled = false # Mobile: use emissive materials without post-process bloom.
     env.fog_enabled = true
@@ -468,7 +477,7 @@ func _setup_environment() -> void:
     env.fog_height = 0.0
     $WorldEnvironment.environment = env
     $Sun.light_color = Color(1.0, 0.88, 0.73)
-    $Sun.light_energy = 1.10
+    $Sun.light_energy = 0.86
     if stage_number == 1:
         # Cheap shadow-free camera-side fill: the dark playable silhouette
         # is not allowed to disappear against high-value courtyard stones.
@@ -476,7 +485,7 @@ func _setup_environment() -> void:
         front_fill.name = "CharacterFill"
         front_fill.rotation_degrees = Vector3(-25, 150, 0)
         front_fill.light_color = Color(0.81, 0.88, 1.0)
-        front_fill.light_energy = 0.50
+        front_fill.light_energy = 0.38
         front_fill.shadow_enabled = false
         add_child(front_fill)
 

@@ -185,8 +185,109 @@ def villain(output, source):
     save_asset("villain_knight", output, source)
 
 
+
+def lion_statue(root, side, pale, shadow, trim):
+    """Recognizable stylized seated heraldic lion, low-poly and original."""
+    x = side * 5.45
+    y = -1.65
+    plinth = cube("LionPlinth", (x, y, 0.41), (1.65, 1.68, 0.82), pale, root, 0.045)
+    cube("PlinthCarving", (x, y - 0.83, 0.47), (1.47, 0.075, 0.12), trim, root, 0.018)
+    sphere("LionHaunches", (x, y + 0.16, 1.30), (0.58, 0.73, 0.51), pale, root, 14, 8)
+    sphere("LionChest", (x, y - 0.28, 1.78), (0.52, 0.44, 0.73), pale, root, 14, 8)
+    sphere("LionMane", (x, y - 0.56, 2.23), (0.56, 0.38, 0.61), shadow, root, 14, 8)
+    sphere("LionFace", (x, y - 0.83, 2.27), (0.37, 0.30, 0.40), pale, root, 14, 8)
+    sphere("LionMuzzle", (x, y - 1.06, 2.08), (0.25, 0.23, 0.18), pale, root, 12, 6)
+    sphere("LionNose", (x, y - 1.255, 2.17), (0.10, 0.07, 0.075), shadow, root, 10, 6)
+    for d in (-1, 1):
+        sphere("LionEar", (x + d*0.36, y - 0.74, 2.55), (0.16, 0.17, 0.21), pale, root, 10, 6)
+        sphere("LionEye", (x + d*0.15, y - 1.085, 2.31), (0.045, 0.04, 0.045), shadow, root, 8, 4)
+        cube("LionPaw", (x + d*0.33, y - 0.82, 1.08), (0.39, 0.51, 0.42), pale, root, 0.09)
+        for claw in (-0.10, 0.0, 0.10):
+            sphere("LionClaw", (x + d*0.33 + claw, y - 1.09, 0.91),
+                   (0.075, 0.12, 0.065), trim, root, 8, 4)
+    for i in range(8):
+        angle = 2.0*math.pi*i/8
+        cone_obj = cone("LionManeLock", (x + math.cos(angle)*0.44, y - 0.50,
+                        2.25 + math.sin(angle)*0.45), 0.13, 0.30, pale, root, 8)
+        cone_obj.rotation_euler[1] = 0.30*math.cos(angle)
+    tail = sphere("LionTail", (x + side*0.57, y+0.55, 1.58),
+                  (0.14, 0.19, 0.49), shadow, root, 10, 6)
+    tail.rotation_euler[1] = side*0.6
+
+
+def courtyard_environment(output, source):
+    """Stage-one scenic set. Visual only: never alters tested collision geometry.
+
+    Blender Y is reversed Godot Z during glTF conversion. Scenic structures
+    stand outside the stage's existing outer boundaries, not on the playable lane.
+    """
+    import random
+    clear_scene()
+    rng = random.Random(1008)
+    stone = material("Courtyard limestone", (0.64, 0.62, 0.55), roughness=0.93)
+    warm = material("Courtyard honey stone", (0.78, 0.69, 0.55), roughness=0.90)
+    roof = material("Courtyard slate roofs", (0.27, 0.32, 0.40), roughness=0.83)
+    wood = material("Courtyard charred wood", (0.24, 0.13, 0.075), roughness=0.89)
+    grass = material("Courtyard summer grass", (0.22, 0.34, 0.19), roughness=1.0)
+    leaves = material("Cypress leaves", (0.16, 0.31, 0.18), roughness=1.0)
+    banner = material("Red royal banners", (0.47, 0.038, 0.064), roughness=0.88)
+    fire = material("Amber flame", (1.0, 0.36, 0.04), glow=2.2)
+    blue = material("Fountain water", (0.29, 0.68, 0.72), roughness=0.15)
+    paving = [material("Pavestone %d" % i, rgb, roughness=0.93)
+              for i,rgb in enumerate([(0.68,0.64,0.57), (0.74,0.67,0.57),
+                                      (0.60,0.59,0.55), (0.82,0.74,0.61)])]
+    root = empty("CourtyardEnvironment")
+
+    # Mobile budget: all thin pavement blocks are static and batched per material.
+    for row in range(30):
+        z = -13.0 + row*1.92
+        for col in range(5):
+            x = (col-2)*1.94 + (0.35 if row%2 else -0.30)
+            mat = paving[rng.randrange(len(paving))]
+            cube("PavementTile", (x, -z, 0.045), (1.83, 1.81, 0.085), mat, root, 0.0)
+
+    # Decorative side strips exist beyond the invisible play-boundary walls.
+    for side in (-1,1):
+        x = side*12.5
+        cube("GardenStrip", (side*13.6, -15, -0.22), (7.0, 69.0, 0.43), grass, root, 0.0)
+        for z in range(-9,43,8):
+            y=-float(z)
+            cylinder("CypressTrunk",(side*13.7, y, 1.65),0.25,3.3,wood,root)
+            for h,rad in [(3.0,0.85),(4.0,0.72),(4.95,0.48)]:
+                cone("CypressFoliage",(side*13.7,y,h),rad,2.65,leaves,root)
+            cube("PerimeterStone", (side*10.9, y, 0.48), (0.92, 4.2, 0.95), stone,root,0.06)
+            for n in (-1.5,-0.5,0.5,1.5):
+                cube("ParapetTooth", (side*10.9, y+n, 1.12),
+                    (1.06,0.55,0.37),warm,root,0.035)
+        for z in (0,24,37):
+            y = -float(z)
+            cube("BarrelStave", (side*11.75,y,0.55),(0.78,0.78,1.1),wood,root,0.10)
+            for h in (0.18,0.85):
+                cube("BarrelIronHoop",(side*11.75,y-0.40,h),(0.91,0.06,0.10),roof,root,0.02)
+        for z in (8,32):
+            y=-float(z)
+            cylinder("Braziers", (side*10.6,y,0.84),0.38,1.65,roof,root)
+            sphere("FireBowl",(side*10.6,y,1.78),(0.56,0.5,0.24),wood,root)
+            cone("TorchFlame",(side*10.6,y,2.19),0.27,0.72,fire,root)
+            cube("RedStandards",(side*11.2,y-1.9,3.12),
+                (0.06,0.05,5.2),wood,root,0.0)
+            cube("Flag",(side*10.6,y-1.9,4.6),
+                (1.12,0.08,1.25),banner,root,0.012)
+
+    # Fountain to the right of the action, completely outside the combat corridor.
+    fx,fy=15.6,-12.0
+    cylinder("FountainBase",(fx,fy,0.22),2.2,0.43,stone,root,24)
+    cylinder("FountainBasin",(fx,fy,0.66),1.88,0.42,warm,root,24)
+    cylinder("FountainWater",(fx,fy,0.89),1.66,0.065,blue,root,24)
+    cylinder("FountainColumn",(fx,fy,1.5),0.29,1.5,stone,root)
+    cylinder("FountainDish",(fx,fy,2.21),0.98,0.24,warm,root,24)
+    cylinder("UpperWater",(fx,fy,2.35),0.77,0.06,blue,root,24)
+    sphere("FountainFinial",(fx,fy,2.66),(0.35,0.35,0.42),warm,root)
+    save_asset("courtyard_environment",output,source)
+
 def gate(output, source):
     clear_scene()
+    shadow = material("Deep gate recess", (0.13, 0.15, 0.18), roughness=0.91)
     stone = material("Aged stone", (0.37, 0.43, 0.48), 0, 0.84)
     light = material("Stone edges", (0.53, 0.58, 0.6), 0, 0.8)
     gold = material("Gate gilt", (0.60, 0.39, 0.16), 0.64, 0.39)
@@ -215,6 +316,30 @@ def gate(output, source):
     for x in (-2.65, -1.3, 0, 1.3, 2.65):
         cube("Merlon", (x, 0, 6.03), (0.75, 1.6, 0.9), light, root, 0.04)
     cube("GoldKeystone", (0, -0.68, 5.14), (0.38, 0.11, 0.51), gold, root, 0.04)
+    # Large towers, heraldic lions and banners bring the first-stage gate
+    # much closer to the target key art while retaining the open exit.
+    for side in (-1,1):
+        x=side*7.4
+        cylinder("FlankingTower",(x,1.25,4.0),1.58,8.0,stone,root,20)
+        cylinder("TowerCornice",(x,1.25,8.15),1.83,0.35,light,root,20)
+        cylinder("RoofBase",(x,1.25,8.42),1.63,0.28,gold,root,20)
+        cone("SlateTurretRoof",(x,1.25,9.54),1.82,2.24,
+             material("Slate tower roofs",(0.26,0.32,0.41),roughness=0.82),
+             root,20)
+        cone("Spire",(x,1.25,10.91),0.16,0.74,gold,root)
+        for level in (2.2,4.3,6.3):
+            cube("ArrowLoop",(x, -0.355, level),(.22,.065,.9),shadow,root,0.018)
+        cube("TowerBanner",(x, -0.41,5.42),(.75,.055,2.45),crimson,root,0.02)
+        cube("TowerBannerTrim",(x,-0.46,4.24),(.80,.055,.16),gold,root,0.01)
+        lion_statue(root,side,light,stone,gold)
+    for x in (-1.85, 1.85):
+        for z in (1.25,2.38,3.45):
+            cube("GateStoneBand",(x,-0.64,z),(.92,.04,.07),light,root,0.0)
+    for side in (-1,1):
+        cube("OuterCurtainWall",(side*9.2,1.75,2.55),(2.25,1.32,5.1),stone,root,.06)
+        cube("WallCoping",(side*9.2,1.75,5.18),(2.44,1.47,.38),light,root,.045)
+        for offset in (-0.62,0.62):
+            cube("WallMerlon",(side*9.2+offset,1.75,5.58),(.64,1.30,.57),light,root,.045)
     save_asset("fortress_gate", output, source)
 
 
@@ -228,4 +353,5 @@ if __name__ == "__main__":
     (source / ".gdignore").touch()
     villain(output, source)
     gate(output, source)
+    courtyard_environment(output, source)
     print("ART GENERATION COMPLETE", flush=True)

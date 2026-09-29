@@ -73,7 +73,9 @@ func _physics_process(delta: float) -> void:
         var basis_y := Basis(Vector3.UP, camera_yaw)
         var direction := (basis_y * Vector3(-input_vec.x, 0.0, input_vec.y)).normalized()
         if camera_pivot.get("side_view"):
-            direction = Vector3(-input_vec.y, 0.0, input_vec.x).normalized()
+            # Side-view joystick had its horizontal direction reversed on device.
+            # Preserve the already-correct depth axis; invert only left/right.
+            direction = Vector3(-input_vec.y, 0.0, -input_vec.x).normalized()
         var speed := move_speed
         speed *= input_vec.length()
         if blocking:
@@ -82,7 +84,12 @@ func _physics_process(delta: float) -> void:
         velocity.z = move_toward(velocity.z, direction.z * speed, acceleration * surface_acceleration * delta)
         rotation.y = lerp_angle(rotation.y, atan2(direction.x, direction.z), minf(1.0, delta * 14.0))
         if visual_root:
-            visual_root.position.y = sin(Time.get_ticks_msec() * 0.021) * 0.045
+            # Skinned locomotion supplies body movement. Procedural idle bob
+            # would visibly lift the rigged boots above the stone pavement.
+            if model_animator:
+                visual_root.position.y = move_toward(visual_root.position.y, 0.0, delta * 8.0)
+            else:
+                visual_root.position.y = sin(Time.get_ticks_msec() * 0.021) * 0.045
     else:
         velocity.x = move_toward(velocity.x, 0.0, acceleration * surface_acceleration * delta)
         velocity.z = move_toward(velocity.z, 0.0, acceleration * surface_acceleration * delta)
@@ -284,6 +291,15 @@ func _install_blender_visual() -> bool:
     if model == null:
         return false
     visual_root.add_child(model)
+    # The Blender rig is modeled from floor level (feet at local Y ~= 0),
+    # whereas CharacterBody3D is centered on its 1.8 m collision capsule.
+    # Without this offset the entire visible character floats ~0.9 m high.
+    var capsule_collision := get_node_or_null("Collision") as CollisionShape3D
+    if capsule_collision and capsule_collision.shape is CapsuleShape3D:
+        var capsule := capsule_collision.shape as CapsuleShape3D
+        model.position.y = capsule_collision.position.y - capsule.height * 0.5
+    else:
+        model.position.y = -0.9
     var chest := model.find_child("Chest", true, false) as MeshInstance3D
     var sword := model.find_child("WeaponPivot", true, false) as Node3D
     var left_leg := model.find_child("LegLeft", true, false) as Node3D

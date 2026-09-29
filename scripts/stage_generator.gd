@@ -217,11 +217,22 @@ static func _ice(game: Node3D, z: float) -> void:
 static func _scenery(game: Node3D, number: int, recipe: Dictionary, stone: Material, trim: Material) -> void:
     var env: Environment = game.get_node("WorldEnvironment").environment
     var sky: ProceduralSkyMaterial = env.sky.sky_material
-    sky.sky_top_color = recipe["sky"]
-    sky.sky_horizon_color = Color(recipe["sky"]).lightened(0.2)
-    env.fog_light_color = recipe["sky"]
+    # Stage one has art-directed daylight; other biomes keep unique palettes.
+    if number == 1:
+        sky.sky_top_color = Color("#6487a4")
+        sky.sky_horizon_color = Color("#dcc2a5")
+        env.fog_light_color = Color("#c4b9a9")
+    else:
+        sky.sky_top_color = recipe["sky"]
+        sky.sky_horizon_color = Color(recipe["sky"]).lightened(0.2)
+        env.fog_light_color = recipe["sky"]
+    var use_blender_yard := number == 1 and ResourceLoader.exists("res://assets/models/courtyard_environment.glb")
+    game.set_meta("uses_blender_yard", use_blender_yard)
     var outer := width(number) * 0.5 + 2.5
     for side in [-1.0, 1.0]:
+        # Never overlay old cone trees on top of the imported Blender courtyard.
+        if use_blender_yard:
+            continue
         for z in range(-9, 40, 8):
             var at := Vector3(side * outer, 0, z)
             if number in [1, 3]:
@@ -238,7 +249,7 @@ static func _scenery(game: Node3D, number: int, recipe: Dictionary, stone: Mater
                 Art.cylinder(game, 0.7, 3.5 + number * 0.15, at + Vector3.UP * 1.75, stone)
                 Art.box(game, Vector3(1.7, 0.25, 1.7), at + Vector3.UP * 3.6, trim)
     # Optional Blender visuals; do not modify gameplay collisions or goal.
-    if number == 1 and ResourceLoader.exists("res://assets/models/courtyard_environment.glb"):
+    if use_blender_yard:
         var yard_scene := load("res://assets/models/courtyard_environment.glb") as PackedScene
         if yard_scene:
             var yard := yard_scene.instantiate() as Node3D

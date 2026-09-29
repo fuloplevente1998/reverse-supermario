@@ -45,8 +45,8 @@ def create_atlas(folder):
     color = np.ones((size, size, 4), dtype=np.float32)
     orm = np.ones((size, size, 4), dtype=np.float32)
     palettes = [
-        ((0.105, 0.123, 0.154), 0.37, 0.78),  # dark graphite alloy
-        ((0.34, 0.022, 0.060), 0.80, 0.02),   # burgundy textile
+        ((0.245, 0.247, 0.27), 0.54, 0.47),  # camera-readable dark graphite alloy
+        ((0.44, 0.055, 0.10), 0.84, 0.02),   # burgundy textile
         ((0.60, 0.385, 0.125), 0.35, 0.72),   # restrained aged gold
     ]
     for i, (base, rough, metallic) in enumerate(palettes):
@@ -79,7 +79,7 @@ def create_atlas(folder):
 
 def shared_materials(base, orm):
     materials = []
-    colors = ((0.13, 0.15, 0.19, 1.0), (0.35, 0.035, 0.075, 1.0), (0.66, 0.45, 0.16, 1.0))
+    colors = ((0.245, 0.247, 0.27, 1.0), (0.44, 0.055, 0.10, 1.0), (0.66, 0.45, 0.16, 1.0))
     for index, name in enumerate(("01_GraphiteArmor", "02_BurgundyFabric", "03_AgedGold")):
         mat = bpy.data.materials.new(name)
         mat.diffuse_color = colors[index]

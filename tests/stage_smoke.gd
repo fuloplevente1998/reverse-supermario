@@ -36,7 +36,7 @@ func _verify() -> void:
             await process_frame
             var joystick = stage.get_node("UI/Controls/Joystick")
             var rect: Rect2 = joystick.get_global_rect()
-            if not _check(rect.size.is_equal_approx(Vector2(220, 220)) and rect.position.x < 40, "Joystick stretched or moved away from the left edge"):
+            if not _check(rect.size.is_equal_approx(Vector2(186, 186)) and rect.position.x < 40, "Compact joystick stretched or moved away from the left edge"):
                 return
             if number == 1 and difficulty == 0:
                 for dimensions in [Vector2i(1280,720), Vector2i(1600,720), Vector2i(1536,691)]:
@@ -45,7 +45,7 @@ func _verify() -> void:
                     await process_frame
                     rect = joystick.get_global_rect()
                     var viewport_size: Vector2 = root.get_visible_rect().size
-                    if not _check(rect.size.x == 220 and rect.end.x < viewport_size.x * 0.25 and rect.get_center().y > viewport_size.y * 0.65 and rect.end.y < viewport_size.y, "Joystick layout fails at %s" % dimensions):
+                    if not _check(rect.size.x == 186 and rect.end.x < viewport_size.x * 0.25 and rect.get_center().y > viewport_size.y * 0.65 and rect.end.y < viewport_size.y, "Joystick layout fails at %s" % dimensions):
                         return
                 root.size = Vector2i(1280,720)
                 await process_frame

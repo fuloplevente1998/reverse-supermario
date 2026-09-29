@@ -283,6 +283,19 @@ def courtyard_environment(output, source):
     cylinder("FountainDish",(fx,fy,2.21),0.98,0.24,warm,root,24)
     cylinder("UpperWater",(fx,fy,2.35),0.77,0.06,blue,root,24)
     sphere("FountainFinial",(fx,fy,2.66),(0.35,0.35,0.42),warm,root)
+    # Batch stone tiles by material: only four paved-road meshes reach Godot.
+    for batch_index, mat in enumerate(paving):
+        tiles = [obj for obj in bpy.context.scene.objects if obj.type == "MESH"
+                 and obj.name.startswith("PavementTile")
+                 and obj.material_slots and obj.material_slots[0].material == mat]
+        if not tiles:
+            continue
+        bpy.ops.object.select_all(action="DESELECT")
+        for tile in tiles:
+            tile.select_set(True)
+        bpy.context.view_layer.objects.active = tiles[0]
+        bpy.ops.object.join()
+        tiles[0].name = "PavementBatch%d" % batch_index
     save_asset("courtyard_environment",output,source)
 
 def gate(output, source):

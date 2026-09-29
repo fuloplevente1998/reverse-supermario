@@ -52,6 +52,14 @@ func _verify() -> void:
     if yard.find_child("FountainBase", true, false) == null or yard.find_child("PavementBatch0", true, false) == null:
         _fail("Courtyard is missing fountain or batched paved road")
         return
+    if yard.find_child("PavementUnderlay", true, false) == null:
+        _fail("Stage-one stone joints have no continuous underlay")
+        return
+    var stone_batch := yard.find_child("PavementBatch0", true, false) as MeshInstance3D
+    var stone_material := stone_batch.get_active_material(0)
+    if not (stone_material is StandardMaterial3D) or (stone_material as StandardMaterial3D).albedo_texture == null:
+        _fail("New courtyard paving imported without its original texture")
+        return
     yard.queue_free()
     await process_frame
 
@@ -94,6 +102,9 @@ func _verify() -> void:
     var first_level = load("res://scenes/main.tscn").instantiate()
     root.add_child(first_level)
     await process_frame
+    if not first_level.get_meta("uses_blender_yard", false):
+        _fail("Stage one is still overlaying its procedural scenery")
+        return
     if first_level.get_node_or_null("CourtyardEnvironmentVisual") == null:
         _fail("Stage 1 did not instance the Blender courtyard")
         return

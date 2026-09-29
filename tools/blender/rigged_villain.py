@@ -185,8 +185,6 @@ def block(name, center, size, mat, root, bevel=0.02):
         mod.segments=2
         bpy.context.view_layer.objects.active=o
         bpy.ops.object.modifier_apply(modifier=mod.name)
-        normal=o.modifiers.new("Keep broad bevel highlights", "WEIGHTED_NORMAL")
-        bpy.ops.object.modifier_apply(modifier=normal.name)
     return o
 
 
@@ -359,6 +357,8 @@ def animate(arm):
 def create_asset(source):
     bpy.ops.object.select_all(action="SELECT")
     bpy.ops.object.delete(use_global=False)
+    bpy.context.scene.unit_settings.system="METRIC"
+    bpy.context.scene.unit_settings.scale_length=1.0
     tex=source/"textures"
     base,orm=create_atlas(tex)
     armor,cloth,gold=shared_materials(base,orm)
@@ -518,15 +518,31 @@ def preview(source,root,rig):
     camera=bpy.data.objects.new("CharacterTurntableCamera",camera_data)
     bpy.context.collection.objects.link(camera)
     scene.camera=camera
-    scene.render.engine="BLENDER_WORKBENCH"
-    scene.display.shading.light="STUDIO"
-    scene.display.shading.studio_light="paint.sl"
-    scene.display.shading.color_type="MATERIAL"
-    scene.display.shading.show_shadows=True
-    scene.display.shading.show_cavity=True
-    scene.display.shading.cavity_type="BOTH"
-    scene.render.resolution_x=900
-    scene.render.resolution_y=900
+    # Headless GitHub runners do not provide libEGL for Workbench/EEVEE.
+    # Cycles CPU renders the real atlas-backed PBR appearance without a GPU.
+    scene.render.engine="CYCLES"
+    scene.cycles.device="CPU"
+    scene.cycles.samples=12
+    scene.cycles.use_denoising=True
+    scene.world.use_nodes=True
+    bg=scene.world.node_tree.nodes.get("Background")
+    bg.inputs["Color"].default_value=(0.68,0.73,0.82,1.0)
+    bg.inputs["Strength"].default_value=0.70
+    lights=(("SoftboxKey",(3,-4,5),620,4.0),
+            ("WarmFill",(-4,-2,3),350,4.5),
+            ("CapeRim",(1,4,4),830,3.5))
+    target=Vector((0,0,1.05))
+    for name,loc,energy,size in lights:
+        data=bpy.data.lights.new(name,"AREA")
+        data.energy=energy
+        data.shape="DISK"
+        data.size=size
+        lamp=bpy.data.objects.new(name,data)
+        bpy.context.collection.objects.link(lamp)
+        lamp.location=loc
+        lamp.rotation_euler=(target-lamp.location).to_track_quat("-Z","Y").to_euler()
+    scene.render.resolution_x=768
+    scene.render.resolution_y=768
     scene.render.resolution_percentage=100
     scene.render.image_settings.file_format="PNG"
     scene.render.film_transparent=False

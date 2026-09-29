@@ -72,7 +72,7 @@ func _check() -> void:
     villain.queue_free()
     await process_frame
 
-    var stage := load("res://scenes/main.tscn").instantiate()
+    var stage = load("res://scenes/main.tscn").instantiate()
     root.add_child(stage)
     await process_frame
     if stage.player.visual_root.find_child("HumanoidArmature", true, false) == null:

@@ -34,6 +34,9 @@ var weapon_root: Node3D
 var camera_pivot: Node3D
 var camera_yaw: float = 0.0
 var legs: Array[Node3D] = []
+var model_animator: AnimationPlayer
+var model_idle := ""
+var model_run := ""
 const Art = preload("res://scripts/art.gd")
 
 func _ready() -> void:
@@ -93,10 +96,16 @@ func _physics_process(delta: float) -> void:
         attack()
 
     move_and_slide()
-    for i in range(legs.size()):
-        var stride := sin(Time.get_ticks_msec() * 0.016 + i * PI) * 0.45
-        var moving := Vector2(velocity.x, velocity.z).length() > 0.2 and is_on_floor()
-        legs[i].rotation.x = lerpf(legs[i].rotation.x, stride if moving else 0.0, minf(1.0, delta * 14.0))
+    var moving := Vector2(velocity.x, velocity.z).length() > 0.2 and is_on_floor()
+    if model_animator and model_idle != "" and model_run != "":
+        var desired := model_run if moving else model_idle
+        if model_animator.current_animation != desired:
+            model_animator.play(desired, 0.13)
+    else:
+        # The original procedural model still supports the legacy leg motion.
+        for i in range(legs.size()):
+            var stride := sin(Time.get_ticks_msec() * 0.016 + i * PI) * 0.45
+            legs[i].rotation.x = lerpf(legs[i].rotation.x, stride if moving else 0.0, minf(1.0, delta * 14.0))
 
 func attack() -> void:
     if not attack_ready or dead or blocking:
@@ -291,7 +300,22 @@ func _install_blender_visual() -> bool:
         body_mesh.material_override = chest_material.duplicate() as StandardMaterial3D
     weapon_root = sword
     legs = [left_leg, right_leg]
-    Art.cape(visual_root)
+    # Use skeletal animation when the new rig is present. Preserve the prior
+    # procedural attack and block controls, independent of locomotion.
+    var animation_nodes := model.find_children("*", "AnimationPlayer", true, false)
+    if not animation_nodes.is_empty():
+        model_animator = animation_nodes[0] as AnimationPlayer
+        for clip in model_animator.get_animation_list():
+            var label := String(clip).to_lower()
+            if label.contains("idle"):
+                model_idle = String(clip)
+            elif label.contains("run"):
+                model_run = String(clip)
+        if model_idle != "":
+            model_animator.play(model_idle)
+    else:
+        # The 0.0.9 non-skeletal GLB uses the original waving cape shader.
+        Art.cape(visual_root)
     return true
 
 func _attack_animation() -> void:

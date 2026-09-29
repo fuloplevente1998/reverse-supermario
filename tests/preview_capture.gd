@@ -22,6 +22,15 @@ func _capture() -> void:
         var captured := root.get_texture().get_image()
         captured.save_png("res://previews/stage%d.png" % number)
         if number == 1:
+            # Move closer only for the dedicated environmental art inspection
+            # frame; this never changes the actual spawn point in the APK.
+            stage.player.global_position = Vector3(0, 0.92, 26)
+            stage.player.velocity = Vector3.ZERO
+            for _near_frame in range(20):
+                await physics_frame
+            await process_frame
+            await RenderingServer.frame_post_draw
+            root.get_texture().get_image().save_png("res://previews/stage1-near-gate.png")
             # A real camera-side frame exposes joystick/character silhouettes.
             stage.player.get_node("CameraPivot").toggle_view()
             await process_frame

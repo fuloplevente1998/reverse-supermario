@@ -79,8 +79,10 @@ def create_atlas(folder):
 
 def shared_materials(base, orm):
     materials = []
-    for name in ("01_GraphiteArmor", "02_BurgundyFabric", "03_AgedGold"):
+    colors = ((0.13, 0.15, 0.19, 1.0), (0.35, 0.035, 0.075, 1.0), (0.66, 0.45, 0.16, 1.0))
+    for index, name in enumerate(("01_GraphiteArmor", "02_BurgundyFabric", "03_AgedGold")):
         mat = bpy.data.materials.new(name)
+        mat.diffuse_color = colors[index]
         mat.use_nodes = True
         bsdf = mat.node_tree.nodes.get("Principled BSDF")
         col = mat.node_tree.nodes.new("ShaderNodeTexImage")

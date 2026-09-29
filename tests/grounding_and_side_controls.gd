@@ -40,9 +40,15 @@ func _verify() -> void:
     if absf(physics_foot_y) > 0.09:
         _fail("Player capsule not grounded: bottom world Y %.3f" % physics_foot_y)
         return
-    var boot := visible_model.find_child("Boot.L", true, false) as MeshInstance3D
+    # Godot can sanitize Blender's Boot.L name to Boot_L during glTF import.
+    # Look up the semantic boot mesh rather than assuming a literal dot.
+    var boot: MeshInstance3D
+    for node in visible_model.find_children("*", "MeshInstance3D", true, false):
+        if String(node.name).begins_with("Boot") and not String(node.name).contains("Gold"):
+            boot = node as MeshInstance3D
+            break
     if boot == null or boot.mesh == null:
-        _fail("Imported Blender boot missing")
+        _fail("Imported Blender boot mesh missing after glTF name sanitization")
         return
     var boot_min_local_y: float = boot.get_aabb().position.y
     var boot_foot_y: float = boot.global_position.y + boot_min_local_y

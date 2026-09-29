@@ -4,7 +4,7 @@ on:
   push:
     branches: [ "main" ]
   pull_request:
-    branches: [ "main", "feature/0.0.8-blender-villain", "feature/0.1.0-rigged-villain", "feature/0.1.1-visual-correction" ]
+    branches: [ "main", "feature/0.0.8-blender-villain", "feature/0.1.0-rigged-villain", "feature/0.1.1-visual-correction", "feature/0.1.2-grounding-side-controls" ]
   workflow_dispatch:
 
 jobs:
@@ -60,6 +60,12 @@ jobs:
           test -s assets/models/villain_knight.glb
           test -s build/blender/villain.blend
           test -s build/blender/model_report.json
+          # First playable stage's detailed replacement props (4 separate GLBs).
+          blender --background --factory-startup --python tools/blender/generate_stage1_kit.py -- --output assets/models --source build/blender 2>&1 | tee -a blender.log
+          for asset in barricade barrel crate banner; do
+            test -s "assets/models/stage1_${asset}.glb"
+            test -s "build/blender/stage1_${asset}.blend"
+          done
 
       - name: Upload rigged character preview images
         if: always()

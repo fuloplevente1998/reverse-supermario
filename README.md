@@ -69,3 +69,7 @@ To regenerate in Blender locally later: `blender --background --factory-startup 
 
 ### 0.0.8 visual upgrade: first-stage castle assault
 The image mockup is cinematic target art rather than a promise of identical real-time mobile graphics. The headless Blender generator now builds a third GLB with a material-batched stone road, castle parapets, cypresses, banners, braziers and an off-lane fountain; the gateway adds tall towers and two original heraldic lion statues. The new props are visual only and do not interfere with established game collisions. All three GLBs and editable Blender sources are uploaded by GitHub Actions; test FPS and camera framing on the actual Android phone before merging.
+
+## 0.0.9 preview — five distinct Blender defenders
+
+The castle assault now has five original headless-Blender defenders: blue steel guard with tower shield, fast green scout with paired knives, heavily armored brute with war hammer, hooded archer with bow and quiver, and red/gold captain with greatsword and royal shield. Generated source `.blend` files and Android-ready `.glb` imports appear in the GitHub Actions art artifact. All retain `Chest`, `LegLeft`, `LegRight` and `WeaponPivot` nodes for runtime hit, walk and attack animations; procedural fallback visuals still work without Blender assets. The unchanged ten-level campaign still needs physical Android frame-rate and touch-playtesting before release.

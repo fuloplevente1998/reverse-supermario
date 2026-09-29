@@ -86,3 +86,6 @@ This follows the 0.0.9 Blender scenery and five enemy models. The main branch is
 - Large binary .blend models stay in CI artifacts; reproducible Python generation is version-controlled.
 
 Mobile asset target below 20,000 triangles; exact count appears in build/blender/model_report.json. FPS and animation appearance require phone QA.
+
+## 0.1.1 visual correction (independent draft branch)
+The real on-device screenshot exposed a mismatch between the cinematic design target and the current prototype: uniform blue sky, flat light-colored paving, duplicated low-poly trees, dark hero silhouette and oversized top-right menu. This pass prioritizes the first-stage actual Godot frame instead of relying on Blender renders. It replaces rectangular white paving with 150 chamfered, irregular limestone stones, a warm mortar underlay and four original 512 px grain textures; removes procedural trees when Blender scenery exists; adds a shadow-free camera-side fill, an art-directed sky, smaller translucent menu buttons and a bottom-left anchored joystick. Gameplay collisions, route geometry, all ten stages and the three difficulties are retained. CI's image capture provides actual Godot screenshots, not marketing mockups. This is an intermediate correction, not a claim that the full fantasy art target has been reached.

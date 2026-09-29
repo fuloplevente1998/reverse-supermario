@@ -4,7 +4,7 @@ on:
   push:
     branches: [ "main" ]
   pull_request:
-    branches: [ "main", "feature/0.0.8-blender-villain" ]
+    branches: [ "main", "feature/0.0.8-blender-villain", "feature/0.1.0-rigged-villain" ]
   workflow_dispatch:
 
 jobs:
@@ -50,6 +50,7 @@ jobs:
           test -s assets/models/villain_knight.glb
           test -s assets/models/fortress_gate.glb
           test -s assets/models/courtyard_environment.glb
+          test -s build/blender/textures/pavestone_0.png
           blender --background --factory-startup --python tools/blender/generate_enemies.py -- --output assets/models --source build/blender 2>&1 | tee -a blender.log
           for kind in guard scout brute archer captain; do
             test -s "assets/models/enemy_${kind}.glb"

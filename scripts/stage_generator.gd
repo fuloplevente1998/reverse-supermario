@@ -65,7 +65,7 @@ static func _layout(game: Node3D, number: int, stone: Material, trim: Material) 
         1:
             # A jump lesson, a staggered wall, and a guarded final approach.
             for i in range(3):
-                _solid(game, "CourtyardHurdle%d" % i, Vector3(10, 0.65 + i * 0.25, 1.0), Vector3(-2 if i % 2 == 0 else 2, (0.65 + i * 0.25) * 0.5, 0 + i * 12), trim)
+                _solid(game, "CourtyardHurdle%d" % i, Vector3(10, 0.65 + i * 0.25, 1.0), Vector3(-2 if i % 2 == 0 else 2, (0.65 + i * 0.25) * 0.5, 0 + i * 12), trim, "res://assets/models/stage1_barricade.glb")
             _hazard(game, "spikes", 0, 32, 0)
         2:
             _solid(game, "BridgeBarricade", Vector3(8, 1.1, 1.2), Vector3(-2, 0.55, 2), trim)
@@ -119,7 +119,7 @@ static func _layout(game: Node3D, number: int, stone: Material, trim: Material) 
             _hazard(game, "saw", 0, 25, 0)
             _hazard(game, "spikes", 4.5, 32, 1)
 
-static func _solid(game: Node3D, node_name: String, dimensions: Vector3, at: Vector3, material: Material) -> StaticBody3D:
+static func _solid(game: Node3D, node_name: String, dimensions: Vector3, at: Vector3, material: Material, visual_path: String = "") -> StaticBody3D:
     var body := StaticBody3D.new()
     body.name = node_name
     body.position = at
@@ -128,7 +128,22 @@ static func _solid(game: Node3D, node_name: String, dimensions: Vector3, at: Vec
     shape.size = dimensions
     collision.shape = shape
     body.add_child(collision)
-    Art.box(body, dimensions, Vector3.ZERO, material)
+    var use_blender_model := visual_path != "" and ResourceLoader.exists(visual_path)
+    if use_blender_model:
+        var model_scene := load(visual_path) as PackedScene
+        if model_scene:
+            var model := model_scene.instantiate() as Node3D
+            if model:
+                model.name = "Stage1BarricadeVisual"
+                # One-metre decorative shell scales vertically to the tested collider.
+                model.scale = Vector3(1.0, dimensions.y, 1.0)
+                body.add_child(model)
+            else:
+                Art.box(body, dimensions, Vector3.ZERO, material)
+        else:
+            Art.box(body, dimensions, Vector3.ZERO, material)
+    else:
+        Art.box(body, dimensions, Vector3.ZERO, material)
     game.add_child(body)
     return body
 
@@ -256,6 +271,28 @@ static func _scenery(game: Node3D, number: int, recipe: Dictionary, stone: Mater
             if yard:
                 yard.name = "CourtyardEnvironmentVisual"
                 game.add_child(yard)
+        # Reusable Blender props remain outside the combat route.
+        var placements := [
+            ["stage1_barrel", -11.55, -7.0],
+            ["stage1_crate", 11.50, -5.5],
+            ["stage1_barrel", 11.60, 8.5],
+            ["stage1_crate", -11.50, 16.0],
+            ["stage1_banner", -12.35, 5.0],
+            ["stage1_banner", 12.35, 25.0]
+        ]
+        for i in range(placements.size()):
+            var entry: Array = placements[i]
+            var id: String = entry[0]
+            var prefab_path := "res://assets/models/%s.glb" % id
+            if not ResourceLoader.exists(prefab_path):
+                continue
+            var prefab := load(prefab_path) as PackedScene
+            if prefab:
+                var prop := prefab.instantiate() as Node3D
+                if prop:
+                    prop.name = "Stage1Prop_%s_%d" % [id, i]
+                    prop.position = Vector3(float(entry[1]), 0.0, float(entry[2]))
+                    game.add_child(prop)
     # The first stage uses the original Blender castle gateway when generated.
     # All other stages, and source checkouts without Blender, keep the fallback.
     var custom_gate := false

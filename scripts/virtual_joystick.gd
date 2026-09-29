@@ -16,9 +16,10 @@ func _ready() -> void:
 func _layout() -> void:
     # Set every anchor explicitly: the former bottom-wide preset stretched the base.
     set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
-    size = Vector2(220, 220)
+    size = Vector2(186, 186)
     var viewport_size := get_viewport_rect().size
-    position = Vector2(32, maxf(180.0, viewport_size.y * 0.73 - 110.0))
+    # Anchor to actual bottom-left across Android aspect ratios.
+    position = Vector2(28, maxf(180.0, viewport_size.y - size.y - 34.0))
     queue_redraw()
 
 func _reset_pointer() -> void:
@@ -41,7 +42,7 @@ func _draw() -> void:
     var radius := minf(size.x, size.y) * 0.42
     draw_circle(center, radius, Color(0.08, 0.13, 0.2, 0.46))
     draw_arc(center, radius, 0, TAU, 48, Color(0.84, 0.75, 0.58, 0.82), 5.0)
-    draw_circle(center + thumb * radius, radius * 0.38, Color(0.8, 0.2, 0.13, 0.88))
+    draw_circle(center + thumb * radius, radius * 0.38, Color(0.70, 0.20, 0.12, 0.77))
 
 func _gui_input(event: InputEvent) -> void:
     if event is InputEventScreenTouch:

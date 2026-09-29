@@ -55,6 +55,42 @@ func _verify() -> void:
     yard.queue_free()
     await process_frame
 
+    # The complete defender roster must import cleanly and integrate with
+    # the runtime enemy script, not merely exist as files on disk.
+    var enemy_script = load("res://scripts/enemy.gd") as Script
+    for kind in ["guard", "scout", "brute", "archer", "captain"]:
+        var model_path: String = "res://assets/models/enemy_%s.glb" % kind
+        if not ResourceLoader.exists(model_path):
+            _fail("Blender defender asset missing: " + kind)
+            return
+        var enemy_scene := load(model_path) as PackedScene
+        if enemy_scene == null:
+            _fail("Cannot import Blender defender: " + kind)
+            return
+        var enemy_model := enemy_scene.instantiate()
+        root.add_child(enemy_model)
+        await process_frame
+        for part in ["Chest", "LegLeft", "LegRight", "WeaponPivot"]:
+            if enemy_model.find_child(part, true, false) == null:
+                _fail("%s GLB missing %s" % [kind, part])
+                return
+        enemy_model.queue_free()
+        await process_frame
+
+        var defender = enemy_script.new()
+        defender.archetype = kind
+        defender.set_physics_process(false)
+        root.add_child(defender)
+        await process_frame
+        if defender.visual_root.find_child("EnemyRig", true, false) == null:
+            _fail("%s is not using its Blender model in the game" % kind)
+            return
+        if defender.body_mesh == null or defender.legs.size() != 2 or defender.weapon_root == null:
+            _fail("%s is missing imported animation pivots" % kind)
+            return
+        defender.queue_free()
+        await process_frame
+
     var first_level = load("res://scenes/main.tscn").instantiate()
     root.add_child(first_level)
     await process_frame
@@ -70,7 +106,7 @@ func _verify() -> void:
     if first_level.player.visual_root.find_child("VillainRig", true, false) == null:
         _fail("Stage 1 is still displaying only the procedural fallback")
         return
-    print("PASS: all Blender GLBs import and render as Godot gameplay nodes")
+    print("PASS: villain, castle art and five defenders import and animate in Godot")
     first_level.queue_free()
     await process_frame
     quit(0)

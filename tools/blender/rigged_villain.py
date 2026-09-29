@@ -575,7 +575,10 @@ def main():
     bpy.ops.wm.save_as_mainfile(filepath=str(source/"villain.blend"))
     bpy.ops.object.select_all(action="DESELECT")
     for o in bpy.context.scene.objects:
-        if o==root or o.parent==root or o.parent==arm or o.parent_type=="BONE":
+        ancestor=o
+        while ancestor is not None and ancestor!=root:
+            ancestor=ancestor.parent
+        if ancestor==root:
             o.select_set(True)
     bpy.ops.export_scene.gltf(filepath=str(output/"villain.glb"),
                               export_format="GLB", use_selection=True,

@@ -30,6 +30,7 @@ func _check() -> void:
         fail("The glTF armature did not import as Skeleton3D")
         return
     var skeleton := armatures[0] as Skeleton3D
+    var bone_count := skeleton.get_bone_count()
     for bone in ["hips", "head", "hand.R", "thigh.L", "thigh.R", "cape.tip"]:
         if skeleton.find_bone(bone) == -1:
             fail("Humanoid bone missing: " + bone)
@@ -82,7 +83,7 @@ func _check() -> void:
         fail("Player is not driving the Blender Idle/Run clips")
         return
     print("PASS: Rigged Blender villain, %d bones, Idle/Run, hand-attached sword, in-stage animation" %
-        skeleton.get_bone_count())
+        bone_count)
     stage.queue_free()
     await process_frame
     quit(0)

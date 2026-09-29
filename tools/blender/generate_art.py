@@ -215,6 +215,71 @@ def lion_statue(root, side, pale, shadow, trim):
     tail.rotation_euler[1] = side*0.6
 
 
+def stone_albedo(name, base, folder, seed):
+    """Create a low-memory tileable warm limestone texture (original artwork)."""
+    import numpy as np
+    folder.mkdir(parents=True, exist_ok=True)
+    n = 512
+    random = np.random.default_rng(seed)
+    small = random.random((32, 32)).astype(np.float32)
+    coarse = np.repeat(np.repeat(small, 16, axis=0), 16, axis=1)
+    grain = random.normal(0, 0.025, (n, n)).astype(np.float32)
+    coarse = (coarse + np.roll(coarse, 3, axis=0) +
+              np.roll(coarse, 3, axis=1) + np.roll(coarse, -3, axis=0) +
+              np.roll(coarse, -3, axis=1)) / 5.0
+    texture = (coarse - 0.5) * 0.17 + grain
+    yy, xx = np.indices((n, n), dtype=np.float32)
+    veining = np.sin(xx * 0.039 + yy * 0.012 + 0.26 *
+                     np.sin(yy * 0.024 + seed)) * 0.015
+    rgba = np.ones((n, n, 4), dtype=np.float32)
+    for c, value in enumerate(base):
+        rgba[:, :, c] = np.clip(value + texture + veining, 0.10, 0.81)
+    image = bpy.data.images.new(name, n, n, alpha=True)
+    image.pixels.foreach_set(rgba.ravel())
+    image.filepath_raw = str((folder / (name + ".png")).resolve())
+    image.file_format = "PNG"
+    image.save()
+    image.pack()
+    return image
+
+
+def irregular_stone(name, x, y, half_x, half_y, mat, parent, rng):
+    """Chamfered octagonal paver with individually sculpted, uneven outline.
+
+    Narrow dark gaps expose the continuous warm mortar instead of green floor.
+    """
+    inset = rng.uniform(0.08, 0.20)
+    profile = [(-half_x+inset,-half_y), (half_x-inset,-half_y),
+               (half_x,-half_y+inset), (half_x,half_y-inset),
+               (half_x-inset,half_y), (-half_x+inset,half_y),
+               (-half_x,half_y-inset),(-half_x,-half_y+inset)]
+    offsets = [(dx+rng.uniform(-0.04, 0.04),
+                dy+rng.uniform(-0.04, 0.04)) for dx,dy in profile]
+    top = [(x+dx,y+dy,rng.uniform(0.025,0.043)) for dx,dy in offsets]
+    bottom = [(vx,vy,-0.05) for vx,vy,_ in top]
+    vertices = top + bottom
+    faces = [tuple(range(8)),tuple(reversed(range(8,16)))]
+    for i in range(8):
+        j = (i+1)%8
+        faces.append((i,j,j+8,i+8))
+    data = bpy.data.meshes.new(name+"Mesh")
+    data.from_pydata(vertices,[],faces)
+    data.update()
+    obj = bpy.data.objects.new(name,data)
+    bpy.context.collection.objects.link(obj)
+    obj.parent = parent
+    obj.data.materials.append(mat)
+    uv = data.uv_layers.new(name="PavestoneUV")
+    for polygon in data.polygons:
+        for loop_index in polygon.loop_indices:
+            vertex = data.vertices[data.loops[loop_index].vertex_index].co
+            # Full texture used independently on each individual stone.
+            uv.data[loop_index].uv = (
+                0.02 + 0.96 * (vertex.x-x+half_x)/(half_x*2),
+                0.02 + 0.96 * (vertex.y-y+half_y)/(half_y*2))
+    return obj
+
+
 def courtyard_environment(output, source):
     """Stage-one scenic set. Visual only: never alters tested collision geometry.
 
@@ -224,8 +289,8 @@ def courtyard_environment(output, source):
     import random
     clear_scene()
     rng = random.Random(1008)
-    stone = material("Courtyard limestone", (0.64, 0.62, 0.55), roughness=0.93)
-    warm = material("Courtyard honey stone", (0.78, 0.69, 0.55), roughness=0.90)
+    stone = material("Courtyard limestone", (0.44, 0.405, 0.36), roughness=0.94)
+    warm = material("Courtyard honey stone", (0.51, 0.43, 0.34), roughness=0.90)
     roof = material("Courtyard slate roofs", (0.27, 0.32, 0.40), roughness=0.83)
     wood = material("Courtyard charred wood", (0.24, 0.13, 0.075), roughness=0.89)
     grass = material("Courtyard summer grass", (0.22, 0.34, 0.19), roughness=1.0)
@@ -233,18 +298,35 @@ def courtyard_environment(output, source):
     banner = material("Red royal banners", (0.47, 0.038, 0.064), roughness=0.88)
     fire = material("Amber flame", (1.0, 0.36, 0.04), glow=2.2)
     blue = material("Fountain water", (0.29, 0.68, 0.72), roughness=0.15)
-    paving = [material("Pavestone %d" % i, rgb, roughness=0.93)
-              for i,rgb in enumerate([(0.68,0.64,0.57), (0.74,0.67,0.57),
-                                      (0.60,0.59,0.55), (0.82,0.74,0.61)])]
+    # Four shared albedo textures are exported with the GLB and used by all
+    # stones. Natural grain and chamfered outlines replace floating white tiles.
+    palettes = [(0.40, 0.36, 0.31), (0.48, 0.415, 0.34),
+                (0.34, 0.34, 0.32), (0.53, 0.45, 0.355)]
+    paving = []
+    for i, rgb in enumerate(palettes):
+        mat = material("Weathered limestone %d" % i, rgb, roughness=0.91)
+        tex = stone_albedo("pavestone_%d" % i, rgb, source/"textures", 100+i)
+        bsdf = mat.node_tree.nodes.get("Principled BSDF")
+        image_node = mat.node_tree.nodes.new("ShaderNodeTexImage")
+        image_node.image = tex
+        mat.node_tree.links.new(image_node.outputs["Color"], bsdf.inputs["Base Color"])
+        paving.append(mat)
     root = empty("CourtyardEnvironment")
 
-    # Mobile budget: all thin pavement blocks are static and batched per material.
+    # A single continuous mortar bed means the seams cannot expose bright
+    # green floor; existing collision remains unchanged under decorative mesh.
+    mortar = material("Dark warm masonry joints", (0.22, 0.21, 0.19), roughness=0.99)
+    cube("PavementUnderlay", (0,-15.1,-0.052), (9.8,60.2,0.11),
+         mortar,root,0.0)
+    # Material-batched irregular limestone pavers; 150 stones, four draw groups.
     for row in range(30):
         z = -13.0 + row*1.92
         for col in range(5):
-            x = (col-2)*1.94 + (0.35 if row%2 else -0.30)
+            x = (col-2)*1.90 + (0.30 if row%2 else -0.30)
+            w = rng.uniform(0.79,0.91)
+            h = rng.uniform(0.78,0.88)
             mat = paving[rng.randrange(len(paving))]
-            cube("PavementTile", (x, -z, 0.045), (1.83, 1.81, 0.085), mat, root, 0.0)
+            irregular_stone("PavementTile",x,-z,w,h,mat,root,rng)
 
     # Decorative side strips exist beyond the invisible play-boundary walls.
     for side in (-1,1):

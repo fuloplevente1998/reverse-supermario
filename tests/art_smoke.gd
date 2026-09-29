@@ -52,8 +52,12 @@ func _verify() -> void:
     if yard.find_child("FountainBase", true, false) == null or yard.find_child("PavementBatch0", true, false) == null:
         _fail("Courtyard is missing fountain or batched paved road")
         return
-    if yard.find_child("PavementUnderlay", true, false) == null:
+    var pavement := yard.find_child("PavementUnderlay", true, false) as MeshInstance3D
+    if pavement == null:
         _fail("Stage-one stone joints have no continuous underlay")
+        return
+    if pavement.get_aabb().size.x < 18.5:
+        _fail("Courtyard paving no longer reaches both sides of the playable lane")
         return
     var stone_batch := yard.find_child("PavementBatch0", true, false) as MeshInstance3D
     var stone_material := stone_batch.get_active_material(0)

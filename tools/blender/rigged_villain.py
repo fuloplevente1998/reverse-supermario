@@ -206,6 +206,10 @@ def uv_and_skin(o, segment, armature, bones):
     for bone, weight in bones.items():
         vg=o.vertex_groups.new(name=bone)
         vg.add(list(range(len(o.data.vertices))), weight, "REPLACE")
+    # glTF skinning requires direct Armature parenting as well as modifier.
+    # The Armature and original root are identity-transformed, so this retains
+    # mesh rest-space geometry and avoids Blender exporter skin warnings.
+    o.parent=armature
     arm_mod=o.modifiers.new("Humanoid skin", "ARMATURE")
     arm_mod.object=armature
     return o

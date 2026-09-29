@@ -318,13 +318,13 @@ def courtyard_environment(output, source):
     mortar = material("Dark warm masonry joints", (0.17, 0.16, 0.145), roughness=0.99)
     # Put the joint bed 15 mm above the stage floor; the old 3 mm offset
     # z-fought against the floor and exposed glaring white seams.
-    cube("PavementUnderlay", (0,-15.1,-0.030), (9.8,60.2,0.09),
+    cube("PavementUnderlay", (0,-15.1,-0.030), (19.2,60.2,0.09),
          mortar,root,0.0)
-    # Material-batched irregular limestone pavers; 150 stones, four draw groups.
+    # Material-batched irregular limestone pavers; 270 stones cover the playable width, four draw groups.
     for row in range(30):
         z = -13.0 + row*1.92
-        for col in range(5):
-            x = (col-2)*1.90 + (0.30 if row%2 else -0.30)
+        for col in range(9):
+            x = (col-4)*2.08 + (0.20 if row%2 else -0.20)
             w = rng.uniform(0.79,0.91)
             h = rng.uniform(0.78,0.88)
             mat = paving[rng.randrange(len(paving))]

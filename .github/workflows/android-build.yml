@@ -49,6 +49,11 @@ jobs:
           blender --background --factory-startup --python tools/blender/generate_art.py -- --output assets/models --source build/blender 2>&1 | tee blender.log
           test -s assets/models/villain_knight.glb
           test -s assets/models/fortress_gate.glb
+          test -s assets/models/courtyard_environment.glb
+          blender --background --factory-startup --python tools/blender/generate_enemies.py -- --output assets/models --source build/blender 2>&1 | tee -a blender.log
+          for kind in guard scout brute archer captain; do
+            test -s "assets/models/enemy_${kind}.glb"
+          done
 
       - name: Upload editable Blender sources and GLBs
         if: always()

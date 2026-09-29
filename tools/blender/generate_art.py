@@ -261,7 +261,7 @@ def irregular_stone(name, x, y, half_x, half_y, mat, parent, rng):
     faces = [tuple(range(8)),tuple(reversed(range(8,16)))]
     for i in range(8):
         j = (i+1)%8
-        faces.append((i,j,j+8,i+8))
+        faces.append((i,i+8,j+8,j))
     data = bpy.data.meshes.new(name+"Mesh")
     data.from_pydata(vertices,[],faces)
     data.update()

@@ -219,9 +219,9 @@ static func _scenery(game: Node3D, number: int, recipe: Dictionary, stone: Mater
     var sky: ProceduralSkyMaterial = env.sky.sky_material
     # Stage one has art-directed daylight; other biomes keep unique palettes.
     if number == 1:
-        sky.sky_top_color = Color("#6487a4")
-        sky.sky_horizon_color = Color("#dcc2a5")
-        env.fog_light_color = Color("#c4b9a9")
+        sky.sky_top_color = Color("#527a9c")
+        sky.sky_horizon_color = Color("#99b4c3")
+        env.fog_light_color = Color("#a2b1b7")
     else:
         sky.sky_top_color = recipe["sky"]
         sky.sky_horizon_color = Color(recipe["sky"]).lightened(0.2)

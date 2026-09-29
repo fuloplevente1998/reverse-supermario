@@ -14,12 +14,14 @@ func _fail(message: String) -> void:
 func _verify() -> void:
     const KNIGHT := "res://assets/models/villain_knight.glb"
     const GATE := "res://assets/models/fortress_gate.glb"
-    if not ResourceLoader.exists(KNIGHT) or not ResourceLoader.exists(GATE):
+    const YARD := "res://assets/models/courtyard_environment.glb"
+    if not ResourceLoader.exists(KNIGHT) or not ResourceLoader.exists(GATE) or not ResourceLoader.exists(YARD):
         _fail("Missing generated Blender GLBs")
         return
     var knight_scene := load(KNIGHT) as PackedScene
     var gate_scene := load(GATE) as PackedScene
-    if knight_scene == null or gate_scene == null:
+    var yard_scene := load(YARD) as PackedScene
+    if knight_scene == null or gate_scene == null or yard_scene == null:
         _fail("Generated GLB could not be imported as PackedScene")
         return
 
@@ -44,10 +46,21 @@ func _verify() -> void:
         return
     gate.queue_free()
     await process_frame
+    var yard := yard_scene.instantiate()
+    root.add_child(yard)
+    await process_frame
+    if yard.find_child("FountainBase", true, false) == null or yard.find_child("PavementBatch0", true, false) == null:
+        _fail("Courtyard is missing fountain or batched paved road")
+        return
+    yard.queue_free()
+    await process_frame
 
     var first_level = load("res://scenes/main.tscn").instantiate()
     root.add_child(first_level)
     await process_frame
+    if first_level.get_node_or_null("CourtyardEnvironmentVisual") == null:
+        _fail("Stage 1 did not instance the Blender courtyard")
+        return
     if first_level.get_node_or_null("FortressGateVisual") == null:
         _fail("Stage 1 did not instance the Blender gate")
         return
@@ -57,7 +70,7 @@ func _verify() -> void:
     if first_level.player.visual_root.find_child("VillainRig", true, false) == null:
         _fail("Stage 1 is still displaying only the procedural fallback")
         return
-    print("PASS: both Blender GLBs import and render as Godot gameplay nodes")
+    print("PASS: all Blender GLBs import and render as Godot gameplay nodes")
     first_level.queue_free()
     await process_frame
     quit(0)

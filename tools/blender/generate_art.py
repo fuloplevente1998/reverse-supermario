@@ -289,19 +289,19 @@ def courtyard_environment(output, source):
     import random
     clear_scene()
     rng = random.Random(1008)
-    stone = material("Courtyard limestone", (0.44, 0.405, 0.36), roughness=0.94)
-    warm = material("Courtyard honey stone", (0.51, 0.43, 0.34), roughness=0.90)
+    stone = material("Courtyard limestone", (0.38, 0.355, 0.32), roughness=0.94)
+    warm = material("Courtyard honey stone", (0.48, 0.40, 0.33), roughness=0.90)
     roof = material("Courtyard slate roofs", (0.27, 0.32, 0.40), roughness=0.83)
     wood = material("Courtyard charred wood", (0.24, 0.13, 0.075), roughness=0.89)
     grass = material("Courtyard summer grass", (0.22, 0.34, 0.19), roughness=1.0)
-    leaves = material("Cypress leaves", (0.16, 0.31, 0.18), roughness=1.0)
+    leaves = material("Cypress leaves", (0.14, 0.24, 0.15), roughness=1.0)
     banner = material("Red royal banners", (0.47, 0.038, 0.064), roughness=0.88)
     fire = material("Amber flame", (1.0, 0.36, 0.04), glow=2.2)
     blue = material("Fountain water", (0.29, 0.68, 0.72), roughness=0.15)
     # Four shared albedo textures are exported with the GLB and used by all
     # stones. Natural grain and chamfered outlines replace floating white tiles.
-    palettes = [(0.40, 0.36, 0.31), (0.48, 0.415, 0.34),
-                (0.34, 0.34, 0.32), (0.53, 0.45, 0.355)]
+    palettes = [(0.32, 0.29, 0.25), (0.38, 0.33, 0.28),
+                (0.28, 0.28, 0.28), (0.44, 0.37, 0.30)]
     paving = []
     for i, rgb in enumerate(palettes):
         mat = material("Weathered limestone %d" % i, rgb, roughness=0.91)
@@ -315,8 +315,10 @@ def courtyard_environment(output, source):
 
     # A single continuous mortar bed means the seams cannot expose bright
     # green floor; existing collision remains unchanged under decorative mesh.
-    mortar = material("Dark warm masonry joints", (0.22, 0.21, 0.19), roughness=0.99)
-    cube("PavementUnderlay", (0,-15.1,-0.052), (9.8,60.2,0.11),
+    mortar = material("Dark warm masonry joints", (0.17, 0.16, 0.145), roughness=0.99)
+    # Put the joint bed 15 mm above the stage floor; the old 3 mm offset
+    # z-fought against the floor and exposed glaring white seams.
+    cube("PavementUnderlay", (0,-15.1,-0.030), (9.8,60.2,0.09),
          mortar,root,0.0)
     # Material-batched irregular limestone pavers; 150 stones, four draw groups.
     for row in range(30):
@@ -335,8 +337,10 @@ def courtyard_environment(output, source):
         for z in range(-9,43,8):
             y=-float(z)
             cylinder("CypressTrunk",(side*13.7, y, 1.65),0.25,3.3,wood,root)
-            for h,rad in [(3.0,0.85),(4.0,0.72),(4.95,0.48)]:
-                cone("CypressFoliage",(side*13.7,y,h),rad,2.65,leaves,root)
+            # Contoured, overlapping tree crowns instead of rigid triangles.
+            for h,sc in [(2.95,(0.94,0.95,1.35)),(3.88,(0.83,0.80,1.36)),
+                         (4.80,(0.57,0.59,1.12))]:
+                sphere("CypressCrown",(side*13.7,y,h),sc,leaves,root,12,8)
             cube("PerimeterStone", (side*10.9, y, 0.48), (0.92, 4.2, 0.95), stone,root,0.06)
             for n in (-1.5,-0.5,0.5,1.5):
                 cube("ParapetTooth", (side*10.9, y+n, 1.12),
@@ -388,6 +392,13 @@ def gate(output, source):
     gold = material("Gate gilt", (0.60, 0.39, 0.16), 0.64, 0.39)
     crimson = material("Siege banners", (0.49, 0.025, 0.08), 0, 0.82)
     flame = material("Torch flame", (1.0, 0.42, 0.055), 0, 0.4, glow=2.0)
+    # One original UV-textured limestone atlas softens the old flat castle.
+    castle_texture = stone_albedo("castle_limestone",(0.35,0.34,0.31),
+                                   source/"textures",188)
+    castle_node = stone.node_tree.nodes.new("ShaderNodeTexImage")
+    castle_node.image = castle_texture
+    stone.node_tree.links.new(castle_node.outputs["Color"],
+                             stone.node_tree.nodes.get("Principled BSDF").inputs["Base Color"])
     root = empty("FortressGate")
     for side in (-1, 1):
         x = side * 2.7

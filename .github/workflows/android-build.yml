@@ -4,7 +4,7 @@ on:
   push:
     branches: [ "main" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "main", "feature/0.0.8-blender-villain" ]
   workflow_dispatch:
 
 jobs:
@@ -54,6 +54,24 @@ jobs:
           for kind in guard scout brute archer captain; do
             test -s "assets/models/enemy_${kind}.glb"
           done
+          blender --background --factory-startup --python tools/blender/rigged_villain.py -- --output assets/models --source build/blender 2>&1 | tee -a blender.log
+          test -s assets/models/villain.glb
+          test -s assets/models/villain_knight.glb
+          test -s build/blender/villain.blend
+          test -s build/blender/model_report.json
+
+      - name: Upload rigged character preview images
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rigged-villain-turntable
+          path: |
+            build/blender/villain_front.png
+            build/blender/villain_side.png
+            build/blender/villain_back.png
+            build/blender/model_report.json
+          if-no-files-found: warn
+          retention-days: 30
 
       - name: Upload editable Blender sources and GLBs
         if: always()
@@ -62,6 +80,8 @@ jobs:
           name: blender-art-source-and-models
           path: |
             build/blender/*.blend
+            build/blender/textures/*.png
+            build/blender/model_report.json
             assets/models/*.glb
           if-no-files-found: warn
           retention-days: 30
@@ -113,6 +133,16 @@ jobs:
             exit 1
           fi
 
+      - name: Verify rigged villain skeleton and animation in Godot
+        shell: bash
+        run: |
+          set -euo pipefail
+          GODOT="$(find "$HOME/.local/share/godot/godot_executable" -maxdepth 1 -type f -name 'Godot*_linux.x86_64' -print -quit)"
+          "$GODOT" --headless --path . --script res://tests/rigged_villain_smoke.gd 2>&1 | tee rigged-villain-smoke.log
+          if grep -E 'SCRIPT ERROR|ERROR:' rigged-villain-smoke.log; then
+            exit 1
+          fi
+
       - name: Smoke test first level
         shell: bash
         run: |
@@ -161,6 +191,7 @@ jobs:
           path: |
             blender.log
             art-smoke.log
+            rigged-villain-smoke.log
             godot-smoke.log
             stage-smoke.log
             preview.log

@@ -523,7 +523,10 @@ def preview(source,root,rig):
     scene.render.engine="CYCLES"
     scene.cycles.device="CPU"
     scene.cycles.samples=12
-    scene.cycles.use_denoising=True
+    # Ubuntu's Blender package is built without OpenImageDenoise.
+    scene.cycles.use_denoising=False
+    for view_layer in scene.view_layers:
+        view_layer.cycles.use_denoising=False
     scene.world.use_nodes=True
     bg=scene.world.node_tree.nodes.get("Background")
     bg.inputs["Color"].default_value=(0.68,0.73,0.82,1.0)

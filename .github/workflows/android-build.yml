@@ -144,6 +144,16 @@ jobs:
             exit 1
           fi
 
+      - name: Test feet grounding and side-view joystick
+        shell: bash
+        run: |
+          set -euo pipefail
+          GODOT="$(find "$HOME/.local/share/godot/godot_executable" -maxdepth 1 -type f -name 'Godot*_linux.x86_64' -print -quit)"
+          timeout 90s "$GODOT" --headless --path . --script res://tests/grounding_and_side_controls.gd 2>&1 | tee grounding-smoke.log
+          if grep -E 'SCRIPT ERROR|ERROR:' grounding-smoke.log; then
+            exit 1
+          fi
+
       - name: Smoke test first level
         shell: bash
         run: |
@@ -193,6 +203,7 @@ jobs:
             blender.log
             art-smoke.log
             rigged-villain-smoke.log
+            grounding-smoke.log
             godot-smoke.log
             stage-smoke.log
             preview.log

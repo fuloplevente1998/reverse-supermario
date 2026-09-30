@@ -1,0 +1,20 @@
+{
+  "stage": "Second modeling pass with baked PBR and five basic motion clips",
+  "character_triangles": 11228,
+  "runtime_meshes": 1,
+  "runtime_materials": 1,
+  "texture_atlas": 1024,
+  "bones": 14,
+  "animations": [
+    "idle",
+    "run",
+    "attack",
+    "block",
+    "jump"
+  ],
+  "limitations": [
+    "Rigid armor weighting",
+    "Cape bound to chest",
+    "No hand-painted damage or cloth simulation"
+  ]
+}

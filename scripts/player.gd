@@ -34,7 +34,12 @@ var weapon_root: Node3D
 var camera_pivot: Node3D
 var camera_yaw: float = 0.0
 var legs: Array[Node3D] = []
+var model_animation: AnimationPlayer
+var model_attack_time: float = 0.0
 const Art = preload("res://scripts/art.gd")
+const KNIGHT_MODEL = preload("res://assets/models/knight_study.glb")
+const KNIGHT_SWORD = preload("res://assets/models/broadsword_study.glb")
+const KNIGHT_SHIELD = preload("res://assets/models/kite_shield_study.glb")
 
 func _ready() -> void:
     hp = max_hp
@@ -93,6 +98,7 @@ func _physics_process(delta: float) -> void:
         attack()
 
     move_and_slide()
+    _update_model_animation(delta)
     for i in range(legs.size()):
         var stride := sin(Time.get_ticks_msec() * 0.016 + i * PI) * 0.45
         var moving := Vector2(velocity.x, velocity.z).length() > 0.2 and is_on_floor()
@@ -181,85 +187,68 @@ func _build_character_visual() -> void:
     visual_root = Node3D.new()
     visual_root.name = "VillainVisual"
     add_child(visual_root)
+    var model := KNIGHT_MODEL.instantiate() as Node3D
+    model.name = "KnightModel"
+    model.position.y = -0.9
+    model.scale = Vector3.ONE * 0.9
+    visual_root.add_child(model)
+    model_animation = model.find_child("AnimationPlayer", true, false) as AnimationPlayer
+    body_mesh = model.find_child("KnightRuntime", true, false) as MeshInstance3D
+    if body_mesh and body_mesh.mesh.get_surface_count() > 0:
+        body_mesh.material_override = body_mesh.mesh.surface_get_material(0).duplicate()
+    var skeleton := model.find_child("Skeleton3D", true, false) as Skeleton3D
+    if skeleton:
+        _attach_model_item(skeleton, "hand.R", KNIGHT_SWORD, false)
+        _attach_model_item(skeleton, "hand.L", KNIGHT_SHIELD, true)
+    if model_animation:
+        for clip_name in ["idle", "run"]:
+            if model_animation.has_animation(clip_name):
+                model_animation.get_animation(clip_name).loop_mode = Animation.LOOP_LINEAR
+        _play_model_animation("idle")
 
-    var dark := StandardMaterial3D.new()
-    dark.albedo_color = Color(0.055, 0.025, 0.07, 1)
-    dark.metallic = 0.32
-    dark.roughness = 0.36
+func _attach_model_item(skeleton: Skeleton3D, bone_name: String, item_scene: PackedScene, shield: bool) -> void:
+    if skeleton.find_bone(bone_name) < 0:
+        return
+    var socket := BoneAttachment3D.new()
+    socket.bone_name = bone_name
+    skeleton.add_child(socket)
+    var item := item_scene.instantiate() as Node3D
+    socket.add_child(item)
+    if shield:
+        item.rotation.z = PI
+        item.position = Vector3(0.0, 0.3, 0.12)
+    else:
+        item.position.y = -0.15
 
-    var crimson := StandardMaterial3D.new()
-    crimson.albedo_color = Color(0.55, 0.025, 0.055, 1)
-    crimson.metallic = 0.18
-    crimson.roughness = 0.30
+func _play_model_animation(clip_name: String) -> void:
+    if model_animation and model_animation.has_animation(clip_name) and model_animation.current_animation != clip_name:
+        model_animation.play(clip_name, 0.08)
 
-    var steel := StandardMaterial3D.new()
-    steel.albedo_color = Color(0.27, 0.30, 0.38, 1)
-    steel.metallic = 0.82
-    steel.roughness = 0.18
-
-    body_mesh = MeshInstance3D.new()
-    var torso := CapsuleMesh.new()
-    torso.radius = 0.47
-    torso.height = 0.95
-    body_mesh.mesh = torso
-    body_mesh.material_override = dark
-    body_mesh.position.y = 0.2
-    visual_root.add_child(body_mesh)
-
-    var head := MeshInstance3D.new()
-    var sphere := SphereMesh.new()
-    sphere.radius = 0.37
-    sphere.height = 0.74
-    head.mesh = sphere
-    head.material_override = crimson
-    head.position = Vector3(0, 0.93, 0)
-    visual_root.add_child(head)
-
-    for side in [-1.0, 1.0]:
-        var shoulder := MeshInstance3D.new()
-        var shoulder_mesh := SphereMesh.new()
-        shoulder_mesh.radius = 0.24
-        shoulder_mesh.height = 0.48
-        shoulder.mesh = shoulder_mesh
-        shoulder.material_override = steel
-        shoulder.position = Vector3(0.48 * side, 0.43, 0)
-        visual_root.add_child(shoulder)
-
-        var horn := MeshInstance3D.new()
-        var horn_mesh := CylinderMesh.new()
-        horn_mesh.top_radius = 0.0
-        horn_mesh.bottom_radius = 0.07
-        horn_mesh.height = 0.42
-        horn.mesh = horn_mesh
-        horn.material_override = steel
-        horn.position = Vector3(0.22 * side, 1.28, 0)
-        horn.rotation_degrees.z = -22.0 * side
-        visual_root.add_child(horn)
-
-    legs = Art.armor(visual_root, true)
-    Art.cape(visual_root)
-
-    weapon_root = Node3D.new()
-    weapon_root.position = Vector3(0.58, 0.15, 0.15)
-    visual_root.add_child(weapon_root)
-
-    var blade := MeshInstance3D.new()
-    var blade_mesh := BoxMesh.new()
-    blade_mesh.size = Vector3(0.12, 0.12, 1.65)
-    blade.mesh = blade_mesh
-    blade.material_override = steel
-    blade.position = Vector3(0, 0, 0.82)
-    weapon_root.add_child(blade)
-
-    var guard := MeshInstance3D.new()
-    var guard_mesh := BoxMesh.new()
-    guard_mesh.size = Vector3(0.65, 0.11, 0.12)
-    guard.mesh = guard_mesh
-    guard.material_override = crimson
-    guard.position = Vector3(0, 0, 0.12)
-    weapon_root.add_child(guard)
+func _update_model_animation(delta: float) -> void:
+    if model_animation == null:
+        return
+    model_attack_time = maxf(0.0, model_attack_time - delta)
+    if model_attack_time > 0.0:
+        return
+    if blocking:
+        model_animation.speed_scale = 1.0
+        _play_model_animation("block")
+    elif not is_on_floor():
+        model_animation.speed_scale = 1.0
+        _play_model_animation("jump")
+    elif Vector2(velocity.x, velocity.z).length() > 0.2:
+        _play_model_animation("run")
+        model_animation.speed_scale = clampf(Vector2(velocity.x, velocity.z).length() / move_speed, 0.45, 1.2)
+    else:
+        model_animation.speed_scale = 1.0
+        _play_model_animation("idle")
 
 func _attack_animation() -> void:
+    if model_animation:
+        model_animation.speed_scale = 1.0
+        model_animation.play("attack", 0.035)
+        model_attack_time = attack_cooldown
+        return
     if weapon_root == null:
         return
     var tween := create_tween()

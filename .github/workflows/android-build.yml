@@ -83,6 +83,16 @@ jobs:
             exit 1
           fi
 
+      - name: Test knight sword and Blender scenery
+        shell: bash
+        run: |
+          GODOT="$(find "$HOME/.local/share/godot/godot_executable" -maxdepth 1 -type f -name 'Godot*_linux.x86_64' -print -quit)"
+          for TEST in knight_model_smoke world_art_smoke; do
+            timeout 60s "$GODOT" --headless --audio-driver Dummy --path . --script "res://tests/$TEST.gd" --quit-after 180 2>&1 | tee "$TEST.log"
+            if grep -E 'SCRIPT ERROR|ERROR:' "$TEST.log"; then exit 1; fi
+            grep -q '_SMOKE_OK' "$TEST.log"
+          done
+
       - name: Test level progression and obstacles
         shell: bash
         run: |
@@ -118,6 +128,8 @@ jobs:
           path: |
             godot-smoke.log
             stage-smoke.log
+            knight_model_smoke.log
+            world_art_smoke.log
             preview.log
           if-no-files-found: warn
           retention-days: 14

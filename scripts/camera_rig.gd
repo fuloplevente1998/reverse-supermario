@@ -20,8 +20,8 @@ func _process(delta: float) -> void:
     camera.look_at(global_position + Vector3(0, 0.65, 0))
 
 func _place_camera() -> void:
-    camera.position = Vector3(-11, 3.5, 0) if side_view else Vector3(-0.6, 2.8, -6.3)
-    camera.fov = 58.0 if side_view else 65.0
+    camera.position = Vector3(-11, 3.5, 0) if side_view else Vector3(-0.6, 2.45, -5.55)
+    camera.fov = 58.0 if side_view else 60.0
     camera.look_at(global_position + Vector3(0, 0.65, 0))
 
 func _unhandled_key_input(event: InputEvent) -> void:

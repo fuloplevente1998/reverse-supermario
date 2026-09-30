@@ -23,6 +23,7 @@ var attack_ready := true
 var player: CharacterBody3D
 var visual_root: Node3D
 var body_mesh: MeshInstance3D
+var weapon_root: Node3D
 
 func _ready() -> void:
     _configure_archetype()
@@ -165,7 +166,13 @@ func _build_visual() -> void:
         old_mesh.visible = false
 
     visual_root = Node3D.new()
+    visual_root.name = "DefenderVisual"
     add_child(visual_root)
+    if _install_blender_visual():
+        visual_root.scale = base_scale
+        attack_marker = Art.cylinder(self, 0.18, 0.5, Vector3(0, 2.5, 0), Art.material(Color("#ffb73d")), true)
+        attack_marker.visible = false
+        return
 
     var armor := StandardMaterial3D.new()
     armor.albedo_color = tint
@@ -212,6 +219,47 @@ func _build_visual() -> void:
     attack_marker = Art.cylinder(self, 0.18, 0.5, Vector3(0, 2.5, 0), Art.material(Color("#ffb73d")), true)
     attack_marker.visible = false
 
+func _install_blender_visual() -> bool:
+    # Each defender has a distinct original Blender mesh. The old procedural
+    # body remains available when developing without the generated art assets.
+    const MODEL_NAMES := {
+        "guard": "enemy_guard",
+        "scout": "enemy_scout",
+        "brute": "enemy_brute",
+        "archer": "enemy_archer",
+        "captain": "enemy_captain",
+    }
+    if not MODEL_NAMES.has(archetype):
+        return false
+    var model_path: String = "res://assets/models/%s.glb" % MODEL_NAMES[archetype]
+    if not ResourceLoader.exists(model_path):
+        return false
+    var packed := load(model_path) as PackedScene
+    if packed == null:
+        return false
+    var model := packed.instantiate() as Node3D
+    if model == null:
+        return false
+    visual_root.add_child(model)
+    var chest := model.find_child("Chest", true, false) as MeshInstance3D
+    var left_leg := model.find_child("LegLeft", true, false) as Node3D
+    var right_leg := model.find_child("LegRight", true, false) as Node3D
+    var weapon := model.find_child("WeaponPivot", true, false) as Node3D
+    if chest == null or left_leg == null or right_leg == null or weapon == null:
+        push_warning("Incomplete %s GLB; using fallback mesh" % archetype)
+        visual_root.remove_child(model)
+        model.queue_free()
+        return false
+    body_mesh = chest
+    var base_material := chest.get_active_material(0)
+    if base_material is StandardMaterial3D:
+        # Avoid flashing every opponent when a single defender takes damage.
+        body_mesh.material_override = base_material.duplicate() as StandardMaterial3D
+    legs = [left_leg, right_leg]
+    weapon_root = weapon
+    return true
+
+
 func _hit_reaction(source_position: Vector3) -> void:
     if body_mesh:
         var mat := body_mesh.material_override as StandardMaterial3D
@@ -235,4 +283,9 @@ func _lunge() -> void:
     var tween := create_tween()
     tween.tween_property(visual_root, "scale", base_scale * Vector3(0.9, 0.9, 1.18), 0.08)
     tween.tween_property(visual_root, "scale", base_scale, 0.12)
+    if weapon_root:
+        var swing := create_tween()
+        swing.tween_property(weapon_root, "rotation_degrees:x", -75.0, 0.08)
+        swing.tween_property(weapon_root, "rotation_degrees:x", 35.0, 0.12)
+        swing.tween_property(weapon_root, "rotation_degrees:x", 0.0, 0.11)
 

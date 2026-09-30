@@ -115,6 +115,8 @@ def idle(t):
     wave=math.sin(t*math.tau)
     rig.pose.bones['chest'].rotation_euler.x=wave*.025
     rig.pose.bones['head'].rotation_euler.z=wave*.02
+    rig.pose.bones['upper_arm.R'].rotation_euler.x=-.18
+    rig.pose.bones['forearm.R'].rotation_euler.x=-.22
 def run(t):
     w=math.sin(t*math.tau)
     rig.pose.bones['pelvis'].location.y=abs(w)*.035
@@ -125,11 +127,20 @@ def run(t):
         rig.pose.bones['upper_arm.'+suffix].rotation_euler.x=-w*s*.40
         rig.pose.bones['forearm.'+suffix].rotation_euler.x=-.22
 def attack(t):
-    swing=math.sin(t*math.pi)
-    rig.pose.bones['chest'].rotation_euler.z=-swing*.45
-    rig.pose.bones['upper_arm.R'].rotation_euler.x=-swing*1.45
-    rig.pose.bones['upper_arm.R'].rotation_euler.z=-swing*.35
-    rig.pose.bones['forearm.R'].rotation_euler.x=-swing*.35
+    # A readable wind-up, forward diagonal cut and recovery, rather than
+    # lifting and lowering a downward-pointing blade on the same path.
+    keys=[(0,(0,-.18,0,-.22,0)),(.25,(.28,-.65,.55,-.75,1.15)),
+          (.60,(-.48,-1.60,-.55,-.10,2.8)),(1,(0,-.18,0,-.22,0))]
+    for (ta,pa),(tb,pb) in zip(keys,keys[1:]):
+        if ta<=t<=tb:
+            u=(t-ta)/(tb-ta);u=u*u*(3-2*u)
+            twist,lift,cut,elbow,wrist=[a+(b-a)*u for a,b in zip(pa,pb)]
+            break
+    rig.pose.bones['chest'].rotation_euler.z=twist
+    rig.pose.bones['upper_arm.R'].rotation_euler.x=lift
+    rig.pose.bones['upper_arm.R'].rotation_euler.z=cut
+    rig.pose.bones['forearm.R'].rotation_euler.x=elbow
+    rig.pose.bones['hand.R'].rotation_euler.x=wrist
 def block(t):
     strength=min(1,t*5)
     rig.pose.bones['upper_arm.L'].rotation_euler.x=-strength*.9

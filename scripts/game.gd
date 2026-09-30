@@ -81,7 +81,7 @@ func _style_interface() -> void:
     hp_bar.max_value = player.max_hp
     hp_bar.value = player.hp
     hp_bar.show_percentage = false
-    hp_bar.custom_minimum_size = Vector2(300, 26)
+    hp_bar.custom_minimum_size = Vector2(264, 20)
     $UI/TopBar.add_child(hp_bar)
 
     var hp_text := Label.new()
@@ -94,12 +94,12 @@ func _style_interface() -> void:
     objective_label = Label.new()
     objective_label.text = "%d. PÁLYA: %s — ÉRD EL A KAPUT" % [stage_number, StageGenerator.title(stage_number)]
     objective_label.position = Vector2(24, 78)
-    objective_label.add_theme_font_size_override("font_size", 18)
+    objective_label.add_theme_font_size_override("font_size", 16)
     $UI.add_child(objective_label)
 
     kill_label = Label.new()
     kill_label.position = Vector2(24, 108)
-    kill_label.add_theme_font_size_override("font_size", 18)
+    kill_label.add_theme_font_size_override("font_size", 16)
     $UI.add_child(kill_label)
 
     status_label.add_theme_font_size_override("font_size", 42)
@@ -145,28 +145,47 @@ func _style_interface() -> void:
 
     var view_button := Button.new()
     view_button.text = "NÉZETVÁLTÁS  •  C"
-    view_button.position = Vector2(1000, 24)
-    view_button.size = Vector2(250, 64)
+    view_button.position = Vector2(1072, 20)
+    view_button.size = Vector2(186, 43)
+    _style_overlay_button(view_button)
     view_button.focus_mode = Control.FOCUS_NONE
     controls.add_child(view_button)
     view_button.pressed.connect($Player/CameraPivot.toggle_view)
     stage_button = Button.new()
-    stage_button.position = Vector2(1000, 98)
-    stage_button.size = Vector2(250, 57)
+    stage_button.position = Vector2(1072, 72)
+    stage_button.size = Vector2(186, 43)
+    _style_overlay_button(stage_button)
     stage_button.text = "PÁLYÁK"
     stage_button.focus_mode = Control.FOCUS_NONE
     controls.add_child(stage_button)
     stage_button.pressed.connect(_open_stage_panel)
     var home_button := Button.new()
     home_button.text = "FŐMENÜ"
-    home_button.position = Vector2(1000, 165)
-    home_button.size = Vector2(250, 55)
+    home_button.position = Vector2(1072, 124)
+    home_button.size = Vector2(186, 43)
+    _style_overlay_button(home_button)
     home_button.focus_mode = Control.FOCUS_NONE
     controls.add_child(home_button)
     home_button.pressed.connect(_go_home)
     $UI/Controls/Joystick.changed.connect(player.set_touch_axis)
     _build_stage_panel()
     _style_control_buttons()
+
+func _style_overlay_button(button: Button) -> void:
+    # Still a real, full-size touch target; only remove the huge opaque HUD.
+    button.add_theme_font_size_override("font_size", 15)
+    button.add_theme_color_override("font_color", Color("#f6eadd"))
+    var normal := StyleBoxFlat.new()
+    normal.bg_color = Color(0.10, 0.13, 0.18, 0.64)
+    normal.border_color = Color(0.73, 0.58, 0.38, 0.72)
+    normal.set_border_width_all(1)
+    normal.set_corner_radius_all(11)
+    button.add_theme_stylebox_override("normal", normal)
+    var pressed := normal.duplicate() as StyleBoxFlat
+    pressed.bg_color = Color(0.18, 0.22, 0.28, 0.89)
+    button.add_theme_stylebox_override("hover", pressed)
+    button.add_theme_stylebox_override("pressed", pressed)
+
 
 func _style_control_buttons() -> void:
     var buttons := [
@@ -175,9 +194,18 @@ func _style_control_buttons() -> void:
         $UI/Controls/Actions/Block
     ]
     for button: Button in buttons:
-        button.add_theme_font_size_override("font_size", 21)
-        button.modulate = Color(1, 1, 1, 0.82)
+        button.add_theme_font_size_override("font_size", 18)
+        button.add_theme_color_override("font_color", Color("#fff1d9"))
         button.focus_mode = Control.FOCUS_NONE
+        var backdrop := StyleBoxFlat.new()
+        backdrop.bg_color = Color(0.12, 0.15, 0.19, 0.47)
+        backdrop.border_color = Color(0.67, 0.52, 0.31, 0.65)
+        backdrop.set_border_width_all(1)
+        backdrop.set_corner_radius_all(12)
+        button.add_theme_stylebox_override("normal", backdrop)
+        var down := backdrop.duplicate() as StyleBoxFlat
+        down.bg_color = Color(0.31, 0.23, 0.15, 0.70)
+        button.add_theme_stylebox_override("pressed", down)
 
     $UI/Controls/Actions/Jump.text = "UGRÁS"
     $UI/Controls/Actions/Attack.text = "TÁMADÁS"
@@ -241,7 +269,7 @@ func _on_goal_body_entered(body: Node) -> void:
         next_button.visible = true
         next_button.move_to_front()
     else:
-        _finish_game("A KÜLDETÉS TELJESÍTVE")
+        _finish_game("A KAPITÁNY LEGYŐZVE — A HERCEGNŐ VÁRA A TIÉD!")
 
 func _stage_path(number: int) -> String:
     return "res://scenes/main.tscn" if number == 1 else "res://scenes/stage%d.tscn" % number
@@ -437,17 +465,29 @@ func _setup_environment() -> void:
     sky.sky_material = sky_mat
     env.sky = sky
     env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-    env.ambient_light_color = Color(0.72, 0.8, 0.9)
-    env.ambient_light_energy = 0.45
+    # Cool indirect fill keeps graphite armor legible from behind.
+    env.ambient_light_color = Color(0.85, 0.88, 0.93)
+    env.ambient_light_energy = 0.25
     env.tonemap_mode = Environment.TONE_MAPPER_FILMIC
     env.glow_enabled = false # Mobile: use emissive materials without post-process bloom.
     env.fog_enabled = true
     env.fog_light_color = Color(0.36, 0.3, 0.3, 1)
     env.fog_light_energy = 0.55
-    env.fog_density = 0.003
+    env.fog_density = 0.0015
     env.fog_height = 0.0
     $WorldEnvironment.environment = env
-    $Sun.light_energy = 0.85
+    $Sun.light_color = Color(1.0, 0.88, 0.73)
+    $Sun.light_energy = 0.60
+    if stage_number == 1:
+        # Cheap shadow-free camera-side fill: the dark playable silhouette
+        # is not allowed to disappear against high-value courtyard stones.
+        var front_fill := DirectionalLight3D.new()
+        front_fill.name = "CharacterFill"
+        front_fill.rotation_degrees = Vector3(-25, 150, 0)
+        front_fill.light_color = Color(0.81, 0.88, 1.0)
+        front_fill.light_energy = 0.18
+        front_fill.shadow_enabled = false
+        add_child(front_fill)
 
 func _build_boundaries() -> void:
     var half_width := StageGenerator.width(stage_number) * 0.5 - 0.3
@@ -478,4 +518,3 @@ func _boundary(node_name: String, center: Vector3, dimensions: Vector3, stone: M
     railing.material_override = stone
     railing.position.y = -4.75
     body.add_child(railing)
-

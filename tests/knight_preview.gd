@@ -20,7 +20,7 @@ func _capture() -> void:
     camera.fov = 46
     for clip in ["idle", "run", "attack", "block"]:
         player.model_animation.play(clip)
-        player.model_animation.advance(0.17)
+        player.model_animation.advance(0.22 if clip == "attack" else 0.17)
         player.model_animation.pause()
         await process_frame
         await RenderingServer.frame_post_draw

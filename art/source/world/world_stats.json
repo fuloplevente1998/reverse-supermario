@@ -1,0 +1,68 @@
+{
+  "fortress_gate": {
+    "triangles": 24132,
+    "meshes": 1,
+    "bytes": 2214612
+  },
+  "courtyard_environment": {
+    "triangles": 212424,
+    "meshes": 6,
+    "bytes": 17368568,
+    "decorative_surfaces": 16
+  },
+  "stage1_barricade": {
+    "triangles": 4212,
+    "meshes": 1,
+    "bytes": 299976
+  },
+  "stage1_barrel": {
+    "triangles": 3300,
+    "meshes": 1,
+    "bytes": 231272
+  },
+  "stage1_crate": {
+    "triangles": 2484,
+    "meshes": 1,
+    "bytes": 177156
+  },
+  "stage1_banner": {
+    "triangles": 1340,
+    "meshes": 1,
+    "bytes": 97464
+  },
+  "timber_house": {
+    "triangles": 14156,
+    "meshes": 1,
+    "bytes": 996124
+  },
+  "oak_tree": {
+    "triangles": 2472,
+    "meshes": 1,
+    "bytes": 181712
+  },
+  "castle_wall": {
+    "triangles": 5184,
+    "meshes": 1,
+    "bytes": 366056
+  },
+  "cliff_rock": {
+    "triangles": 256,
+    "meshes": 1,
+    "bytes": 21416
+  },
+  "pine_tree": {
+    "triangles": 3204,
+    "meshes": 1,
+    "bytes": 246088
+  },
+  "forge_house": {
+    "triangles": 14480,
+    "meshes": 1,
+    "bytes": 1019800
+  },
+  "mill_house": {
+    "triangles": 17032,
+    "meshes": 1,
+    "bytes": 1196176
+  }
+}

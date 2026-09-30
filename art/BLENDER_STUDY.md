@@ -34,3 +34,8 @@ A sisak új homlokdíszt, a mellpáncél külön címert, a vállpáncél szegec
 ## Ellenőrzés
 
 `tests/knight_model_smoke.gd` ellenőrzi a 17 csontot, a köpeny mozgását, az öt importált mozgást, a két kézcsatolást és a támadás/védekezés animációváltását. Az ellenőrzés Godot 4.7.2-ben futott. `verify_cape.py` ténylegesen kiértékelt Blender-hálókoordinátákból ellenőrzi a köpeny deformációját; eredménye a `source/cape_verification.json` fájlban van. A `source/cape_run.gif` valódi Godot-képkockákból készült. A grafikai ellenőrzés asztali szoftveres rendereléssel történik; nem helyettesít Androidon mért FPS-t.
+
+
+## 0.1.5 folytatás
+
+A kard helyes kéztengellyel és fogásponttal rögzül; új felkészítő–vágó–visszaálló támadóanimáció. A penge világpozícióját is ellenőrzi a karakterteszt. A korábbi GitHub-kőburkolat és ellenfélmodellek átvéve, a továbbépített környezeti modellek részletei: [WORLD_ART.md](WORLD_ART.md).

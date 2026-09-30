@@ -75,7 +75,7 @@ func _physics_process(delta: float) -> void:
         var basis_y := Basis(Vector3.UP, camera_yaw)
         var direction := (basis_y * Vector3(-input_vec.x, 0.0, input_vec.y)).normalized()
         if camera_pivot.get("side_view"):
-            direction = Vector3(-input_vec.y, 0.0, input_vec.x).normalized()
+            direction = Vector3(-input_vec.y, 0.0, -input_vec.x).normalized()
         var speed := move_speed
         speed *= input_vec.length()
         if blocking:
@@ -84,7 +84,7 @@ func _physics_process(delta: float) -> void:
         velocity.z = move_toward(velocity.z, direction.z * speed, acceleration * surface_acceleration * delta)
         rotation.y = lerp_angle(rotation.y, atan2(direction.x, direction.z), minf(1.0, delta * 14.0))
         if visual_root:
-            visual_root.position.y = sin(Time.get_ticks_msec() * 0.021) * 0.045
+            visual_root.position.y = move_toward(visual_root.position.y, 0.0, delta * 8.0)
     else:
         velocity.x = move_toward(velocity.x, 0.0, acceleration * surface_acceleration * delta)
         velocity.z = move_toward(velocity.z, 0.0, acceleration * surface_acceleration * delta)
@@ -218,7 +218,10 @@ func _attach_model_item(skeleton: Skeleton3D, bone_name: String, item_scene: Pac
         item.rotation.z = PI
         item.position = Vector3(0.0, 0.3, 0.12)
     else:
-        item.position.y = -0.15
+        # Hand bone local +Y follows the downward fingers. Flip the authored
+        # blade and place its grip center, rather than its pommel, in the fist.
+        item.rotation.z = PI
+        item.position.y = 0.15
 
 func _play_model_animation(clip_name: String) -> void:
     if model_animation and model_animation.has_animation(clip_name) and model_animation.current_animation != clip_name:

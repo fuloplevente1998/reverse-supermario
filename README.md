@@ -56,3 +56,8 @@ The joystick now uses explicit top-left anchors and a fixed 220×220 area. Its c
 All ten stages support Easy/Normal/Hard. Difficulty affects health, damage, enemy count, trap timing, bridge width and movement. Five enemy types: guard, quick scout, frontal-armored brute, ranged archer and captain. Attacks have visible windup markers; shots collide with cover. Brutes take full damage from behind or while preparing an attack. The stage menu pauses gameplay.
 
 CI checks 30 stage/difficulty combinations and captures desktop compatibility-renderer previews. Android uses Mobile renderer; device frame rate, touch feel and Vulkan appearance still need phone testing.
+
+
+### Grafikai tesztág: 0.1.5
+
+Az `art/blender-knight-study` ág az új, textúrázott és köpenyes lovagot a `feature/0.1.3-stage1-models` ág környezetével és ellenfélmodelljeivel egyesíti. Javított kardfogás és csapásív; részletesebb várudvar, házak, fák, falak, sziklák, kovácsműhely és malom. A szerkeszthető Blender-források és a modellgenerátorok is bekerültek. Részletek és korlátok: [art/WORLD_ART.md](art/WORLD_ART.md).

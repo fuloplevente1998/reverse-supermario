@@ -9,6 +9,7 @@ func _verify() -> void:
     await process_frame
     await physics_frame
     var player = stage.get_node("Player")
+    player.set_physics_process(false)
     assert(player.model_animation != null, "Imported AnimationPlayer missing")
     assert(player.body_mesh != null, "Imported runtime mesh missing")
     var skeleton = player.visual_root.find_child("Skeleton3D", true, false) as Skeleton3D
@@ -22,6 +23,28 @@ func _verify() -> void:
             assert(child.get_child_count() == 1, "Weapon missing")
             sockets += 1
     assert(sockets == 2, "Sword and shield must both be attached")
+    var sword: Node3D
+    for child in skeleton.get_children():
+        if child is BoneAttachment3D and child.bone_name == "hand.R":
+            sword = child.get_child(0)
+    player.model_animation.play("idle")
+    player.model_animation.advance(0.1)
+    player.model_animation.pause()
+    await process_frame
+    await process_frame
+    var grip := sword.to_global(Vector3(0,0.15,0))
+    var tip := sword.to_global(Vector3(0,1.30,0))
+    assert(tip.y > grip.y + 0.65, "Sword points downward in guard pose")
+    var idle_tip := tip
+    player.model_animation.play("attack")
+    player.model_animation.advance(0.22)
+    player.model_animation.pause()
+    await process_frame
+    await process_frame
+    tip = sword.to_global(Vector3(0,1.30,0))
+    assert(tip.distance_to(idle_tip) > 0.5, "Attack blade does not sweep")
+    var forward: Vector3 = player.global_transform.basis.z.normalized()
+    assert((tip-player.global_position).dot(forward) > 0.35, "Blade misses the forward attack space")
     for clip in ["idle", "run", "attack", "block", "jump"]:
         assert(player.model_animation.has_animation(clip), "Missing clip: " + clip)
         player.model_animation.play(clip)
@@ -44,7 +67,7 @@ func _verify() -> void:
     # Test all clip tracks resolve on the imported rig, then normal game processing.
     for i in range(10):
         await physics_frame
-    print("KNIGHT_MODEL_SMOKE_OK: 17 bones, moving cape, 5 clips, 2 attached weapons, attack/block transitions")
+    print("KNIGHT_MODEL_SMOKE_OK: raised sword, forward blade sweep, 17 bones, moving cape, 5 clips, 2 attached weapons, attack/block transitions")
     stage.queue_free()
     await process_frame
     quit(0)

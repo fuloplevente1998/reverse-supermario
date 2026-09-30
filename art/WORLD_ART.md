@@ -14,8 +14,8 @@ A korábbi kőtextúrák, udvar, kapu, négy udvari kellék és öt ellenfélmod
 - Az első udvarhoz falakon túli házsor, növényzet, talaj és távoli dombok.
 - A további 9 pálya a közös modellkészletből kapott a pályához illő első környezeti elrendezést.
 
-A statikus dekoráció anyagai összevonva: az udvar 6 háló, a díszítő háló 16 anyagfelület.
-A várudvar dekorációja kb. 212 ezer háromszög, a kapu kb. 24 ezer; telefonos teljesítménymérés még szükséges.
+A 0.1.6 játékmodell 25 térbeli részre bontott hálót és 47 450 háromszöget tartalmaz; a korábbi 212 424 háromszögnél 77,7%-kal kevesebbet.
+A kapu kb. 24 ezer háromszög; telefonos teljesítménymérés még szükséges.
 
 ## Blender-források
 

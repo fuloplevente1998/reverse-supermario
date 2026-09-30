@@ -11,7 +11,7 @@ func _verify() -> void:
     assert(yard.find_child("PavementBatch0", true, false) != null)
     var mesh = yard.find_child("PavementBatch0", true, false) as MeshInstance3D
     assert((mesh.get_active_material(0) as StandardMaterial3D).albedo_texture != null, "Prior GitHub stone texture lost")
-    var decorations := yard.find_children("SceneryRuntime*", "MeshInstance3D", true, false)
+    var decorations: Array[Node] = yard.find_children("SceneryRuntime*", "MeshInstance3D", true, false)
     assert(decorations.size()>1, "Courtyard must be spatially chunked")
     var triangles := 0
     for decoration: MeshInstance3D in decorations:

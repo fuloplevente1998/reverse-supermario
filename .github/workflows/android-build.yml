@@ -82,12 +82,17 @@ jobs:
           fi
           mkdir -p artifact
           cp "$APK" artifact/ReversePlatformer-debug.apk
+          SIGNER="$(find "$ANDROID_HOME/build-tools" -type f -name apksigner | sort -V | tail -n 1)"
+          "$SIGNER" verify --verbose artifact/ReversePlatformer-debug.apk
+          sha256sum artifact/ReversePlatformer-debug.apk | tee artifact/ReversePlatformer-debug.apk.sha256
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: ReversePlatformer-debug-apk
-          path: artifact/ReversePlatformer-debug.apk
+          path: |
+            artifact/ReversePlatformer-debug.apk
+            artifact/ReversePlatformer-debug.apk.sha256
           if-no-files-found: error
 
       # Also expose two small transfer archives for clients with a 32 MiB
@@ -130,7 +135,7 @@ jobs:
         run: |
           GODOT="$(find "$HOME/.local/share/godot/godot_executable" -maxdepth 1 -type f -name 'Godot*_linux.x86_64' -print -quit)"
           for TEST in knight_model_smoke world_art_smoke side_view_smoke; do
-            timeout 120s "$GODOT" --headless --audio-driver Dummy --path . --script "res://tests/$TEST.gd" --quit-after 1800 2>&1 | tee "$TEST.log"
+            timeout 120s "$GODOT" --headless --audio-driver Dummy --path . --script "res://tests/$TEST.gd" 2>&1 | tee "$TEST.log"
             if grep -E 'SCRIPT ERROR|ERROR:' "$TEST.log"; then exit 1; fi
             grep -q '_SMOKE_OK' "$TEST.log"
           done

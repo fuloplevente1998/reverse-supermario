@@ -2,7 +2,7 @@ name: Android Debug APK
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main", "art/blender-knight-study" ]
   workflow_dispatch:
 
 jobs:

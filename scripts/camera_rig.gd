@@ -34,13 +34,14 @@ func _focus() -> Vector3:
     if side_view:
         # Keep ordinary jumps inside a stable frame; follow only tall platforms.
         var ground: float = target.get_parent().side_ground_height(target.global_position.z)
-        return Vector3(0, ground + SIDE_FLOOR_CENTER + maxf(0.0, target.global_position.y - ground - 4.8), target.global_position.z + look_ahead)
+        var floor_center: float = 2.2 if target.get_parent().stage_number == 1 else SIDE_FLOOR_CENTER
+        return Vector3(0, ground + floor_center + maxf(0.0, target.global_position.y - ground - 4.8), target.global_position.z + look_ahead)
     return target.global_position
 
 func _place_camera() -> void:
     camera.projection = Camera3D.PROJECTION_ORTHOGONAL if side_view else Camera3D.PROJECTION_PERSPECTIVE
     camera.keep_aspect = Camera3D.KEEP_HEIGHT
-    camera.size = SIDE_HEIGHT
+    camera.size = 8.8 if side_view and target.get_parent().stage_number == 1 else SIDE_HEIGHT
     camera.cull_mask = 5 if side_view else 3
     camera.position = Vector3(-30, 0, 0) if side_view else Vector3(-0.6, 2.45, -5.55)
     camera.fov = 58.0 if side_view else 60.0

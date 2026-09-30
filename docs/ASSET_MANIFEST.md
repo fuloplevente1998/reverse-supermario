@@ -133,3 +133,13 @@ Az alábbi leltár a 0.1.7 implementációs commit fájljait rögzíti. Az expor
 | `tools/blender/verify_cape.py` | 1153 | `b17adb1206686ac20dd11102334e329ca2ebf02f` |
 
 Nem elérhető eredeti referenciák: 1830.png, 1831.png. A felhasznált háttér teljes JPEG-je az assets/backgrounds könyvtárban megtalálható. A generálás teljes felbontású PNG köztes példánya nincs a projektben; az APK-hoz használt JPEG van verziózva.
+
+
+## 0.1.8 mintaszakasz kiegészítés
+- assets/terrain/sample_limestone.svg: szerkeszthető, saját mészkőlap textúra.
+- assets/ui/jump.svg, attack.svg, block.svg: saját mobil ikonok.
+- assets/materials/side_guard.gdshader: a közös karakteratlasz kék/arany változata.
+- scripts/side_sample_art.gd: az új fizikai pályára épített 25 m-es kötegelt kőgeometria és díszkert forrása.
+- A knight_study.glb és a hozzá tartozó .blend az őr megosztott forrása is; nincs új modellnek feltüntetve.
+- docs/SIDE_SAMPLE_0.1.8.md: döntések, tesztelési határok, folytatás.
+- A mellékelt 1838/1839/1840/1841 eredeti fájlbájtjai és a 1830 képpontjai az elérhető eszközökkel nem exportálhatók.

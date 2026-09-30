@@ -33,6 +33,13 @@ func set_side_view(enabled: bool) -> void:
     if side_view == enabled:
         return
     side_view = enabled
+    if stage_number == 1:
+        var env: Environment = $WorldEnvironment.environment
+        env.ambient_light_energy = 0.65 if enabled else 0.25
+        $Sun.light_energy = 0.95 if enabled else 0.60
+        if get_node_or_null("CharacterFill"):
+            $CharacterFill.light_energy = 0.65 if enabled else 0.18
+        player._update_side_presentation()
     var actors: Array = [player]
     for group in ["enemies", "hazards", "projectiles", "moving_platforms"]:
         actors.append_array(get_tree().get_nodes_in_group(group))
@@ -125,20 +132,43 @@ func _connect_gameplay() -> void:
 func _style_interface() -> void:
     hp_label.text = ""
 
+    $UI/TopBar.visible = false
+    var health_panel := Panel.new()
+    health_panel.name = "HealthPanel"
+    health_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+    var health_style := StyleBoxFlat.new()
+    health_style.bg_color = Color("#211a20")
+    health_style.border_color = Color("#d5ac60")
+    health_style.set_border_width_all(2)
+    health_style.set_corner_radius_all(9)
+    health_panel.add_theme_stylebox_override("panel", health_style)
+    $UI.add_child(health_panel)
     hp_bar = ProgressBar.new()
     hp_bar.min_value = 0
     hp_bar.max_value = player.max_hp
     hp_bar.value = player.hp
     hp_bar.show_percentage = false
     hp_bar.custom_minimum_size = Vector2(264, 20)
-    $UI/TopBar.add_child(hp_bar)
+    hp_bar.position = Vector2(12,31)
+    hp_bar.size = Vector2(264,24)
+    health_panel.add_child(hp_bar)
+    var health_bg := StyleBoxFlat.new()
+    health_bg.bg_color = Color("#120e16")
+    health_bg.border_color = Color("#c39a50")
+    health_bg.set_border_width_all(2)
+    health_bg.set_corner_radius_all(5)
+    hp_bar.add_theme_stylebox_override("background", health_bg)
+    var health_fill := StyleBoxFlat.new()
+    health_fill.bg_color = Color("#d73937")
+    health_fill.set_corner_radius_all(4)
+    hp_bar.add_theme_stylebox_override("fill", health_fill)
 
     var hp_text := Label.new()
     hp_text.name = "HPText"
     hp_text.text = "ÉLETERŐ"
-    hp_text.position = Vector2(0, -28)
+    hp_text.position = Vector2(12,5)
     hp_text.add_theme_font_size_override("font_size", 17)
-    $UI/TopBar.add_child(hp_text)
+    $UI/HealthPanel.add_child(hp_text)
 
     objective_label = Label.new()
     objective_label.text = "%d. PÁLYA: %s — ÉRD EL A KAPUT" % [stage_number, StageGenerator.title(stage_number)]
@@ -193,6 +223,7 @@ func _style_interface() -> void:
     $UI.move_child(vignette, 0)
 
     var view_button := Button.new()
+    view_button.name = "ViewMenu"
     view_button.text = "NÉZETVÁLTÁS  •  C"
     view_button.position = Vector2(1072, 20)
     view_button.size = Vector2(186, 43)
@@ -209,6 +240,7 @@ func _style_interface() -> void:
     controls.add_child(stage_button)
     stage_button.pressed.connect(_open_stage_panel)
     var home_button := Button.new()
+    home_button.name = "HomeMenu"
     home_button.text = "FŐMENÜ"
     home_button.position = Vector2(1072, 124)
     home_button.size = Vector2(186, 43)
@@ -219,6 +251,8 @@ func _style_interface() -> void:
     $UI/Controls/Joystick.changed.connect(player.set_touch_axis)
     _build_stage_panel()
     _style_control_buttons()
+    _layout_mobile_interface()
+    get_viewport().size_changed.connect(_layout_mobile_interface)
 
 func _style_overlay_button(button: Button) -> void:
     # Still a real, full-size touch target; only remove the huge opaque HUD.
@@ -237,28 +271,71 @@ func _style_overlay_button(button: Button) -> void:
 
 
 func _style_control_buttons() -> void:
-    var buttons := [
-        $UI/Controls/Actions/Jump,
-        $UI/Controls/Actions/Attack,
-        $UI/Controls/Actions/Block
-    ]
-    for button: Button in buttons:
-        button.add_theme_font_size_override("font_size", 18)
-        button.add_theme_color_override("font_color", Color("#fff1d9"))
+    var labels := {"Jump":"UGRÁS", "Block":"VÉDÉS", "Attack":"TÁMADÁS"}
+    for button: Button in [$UI/Controls/Actions/Jump,$UI/Controls/Actions/Attack,$UI/Controls/Actions/Block]:
+        button.set_script(preload("res://scripts/round_touch_button.gd"))
+        button.call("_ready")
+        button.text = ""
+        button.icon = load("res://assets/ui/%s.svg" % str(button.name).to_lower())
+        button.add_theme_constant_override("icon_max_width",42)
         button.focus_mode = Control.FOCUS_NONE
         var backdrop := StyleBoxFlat.new()
-        backdrop.bg_color = Color(0.12, 0.15, 0.19, 0.47)
-        backdrop.border_color = Color(0.67, 0.52, 0.31, 0.65)
-        backdrop.set_border_width_all(1)
-        backdrop.set_corner_radius_all(12)
-        button.add_theme_stylebox_override("normal", backdrop)
+        backdrop.bg_color = Color(0.13,0.09,0.13,0.90)
+        backdrop.border_color = Color("#dab66d")
+        backdrop.set_border_width_all(3)
+        backdrop.set_corner_radius_all(52)
+        backdrop.content_margin_bottom = 22.0
+        button.add_theme_stylebox_override("normal",backdrop)
         var down := backdrop.duplicate() as StyleBoxFlat
-        down.bg_color = Color(0.31, 0.23, 0.15, 0.70)
-        button.add_theme_stylebox_override("pressed", down)
+        down.bg_color = Color("#723542")
+        down.border_color = Color("#ffe4a3")
+        button.add_theme_stylebox_override("pressed",down)
+        button.add_theme_stylebox_override("hover",backdrop)
+        var caption := Label.new()
+        caption.text = labels[str(button.name)]
+        caption.position = Vector2(0,75)
+        caption.size = Vector2(104,20)
+        caption.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+        caption.add_theme_font_size_override("font_size",12)
+        caption.add_theme_color_override("font_color",Color("#f8e5bc"))
+        caption.mouse_filter = Control.MOUSE_FILTER_IGNORE
+        button.add_child(caption)
 
-    $UI/Controls/Actions/Jump.text = "UGRÁS"
-    $UI/Controls/Actions/Attack.text = "TÁMADÁS"
-    $UI/Controls/Actions/Block.text = "VÉDÉS"
+func mobile_safe_rect() -> Rect2:
+    var viewport_size := get_viewport().get_visible_rect().size
+    var area := Rect2(Vector2.ZERO,viewport_size)
+    if OS.has_feature("android"):
+        var safe := DisplayServer.get_display_safe_area()
+        var window_size := Vector2(DisplayServer.window_get_size())
+        if safe.size.x > 0 and safe.size.y > 0 and window_size.x > 0 and window_size.y > 0:
+            var factor := viewport_size / window_size
+            area = area.intersection(Rect2(Vector2(safe.position)*factor,Vector2(safe.size)*factor))
+    return area
+
+func _layout_mobile_interface(safe_override: Rect2 = Rect2()) -> void:
+    if hp_bar == null:
+        return
+    var safe := mobile_safe_rect() if safe_override.size == Vector2.ZERO else safe_override
+    $UI/HealthPanel.position = safe.position + Vector2(20,18)
+    $UI/HealthPanel.size = Vector2(288,65)
+    objective_label.position = safe.position + Vector2(22,91)
+    kill_label.position = safe.position + Vector2(22,117)
+    var menu_buttons := [controls.get_node("ViewMenu"),stage_button,controls.get_node("HomeMenu")]
+    for index in range(menu_buttons.size()):
+        menu_buttons[index].position = Vector2(safe.end.x-194,safe.position.y+20+52*index)
+    var actions: Control = $UI/Controls/Actions
+    actions.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
+    actions.position = Vector2(safe.end.x-354,safe.end.y-166)
+    actions.size = Vector2(334,146)
+    for item in [[$UI/Controls/Actions/Block,Vector2(0,36)],[$UI/Controls/Actions/Jump,Vector2(108,0)],[$UI/Controls/Actions/Attack,Vector2(216,36)]]:
+        item[0].position = item[1]
+        item[0].size = Vector2(104,104)
+    var joystick: Control = $UI/Controls/Joystick
+    joystick.position = Vector2(safe.position.x+28,safe.end.y-220)
+    status_label.position.x = safe.get_center().x-status_label.size.x*0.5
+    stage_panel.position = safe.get_center()-stage_panel.size*0.5
+    restart_button.position.x = safe.get_center().x-restart_button.size.x*0.5
+    next_button.position.x = safe.get_center().x-next_button.size.x*0.5
 
 func _on_hp_changed(value: int) -> void:
     if hp_bar:
@@ -534,7 +611,7 @@ func _setup_environment() -> void:
         # is not allowed to disappear against high-value courtyard stones.
         var front_fill := DirectionalLight3D.new()
         front_fill.name = "CharacterFill"
-        front_fill.rotation_degrees = Vector3(-25, 150, 0)
+        front_fill.rotation_degrees = Vector3(-18,-90,0)
         front_fill.light_color = Color(0.81, 0.88, 1.0)
         front_fill.light_energy = 0.18
         front_fill.shadow_enabled = false

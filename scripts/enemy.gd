@@ -24,6 +24,8 @@ var player: CharacterBody3D
 var visual_root: Node3D
 var body_mesh: MeshInstance3D
 var weapon_root: Node3D
+var detail_animation: AnimationPlayer
+var detail_attack_time := 0.0
 
 func _ready() -> void:
     _configure_archetype()
@@ -81,6 +83,13 @@ func _physics_process(delta: float) -> void:
     if on_center_line:
         position.x = 0.0
         velocity.x = 0.0
+    if detail_animation:
+        detail_attack_time = maxf(0.0, detail_attack_time - delta)
+        if detail_attack_time <= 0.0:
+            var clip := "run" if Vector2(velocity.x, velocity.z).length() > 0.2 else "idle"
+            if detail_animation.current_animation != clip:
+                detail_animation.play(clip, 0.08)
+        visual_root.rotation.y = -0.55 * (1.0 if cos(rotation.y) >= 0.0 else -1.0) if on_center_line else 0.0
     for i in range(legs.size()):
         var moving := Vector2(velocity.x, velocity.z).length() > 0.2
         legs[i].rotation.x = sin(Time.get_ticks_msec() * 0.013 + i * PI) * 0.35 if moving else 0.0
@@ -176,7 +185,7 @@ func _build_visual() -> void:
     visual_root = Node3D.new()
     visual_root.name = "DefenderVisual"
     add_child(visual_root)
-    if _install_blender_visual():
+    if _install_sample_guard() or _install_blender_visual():
         visual_root.scale = base_scale
         attack_marker = Art.cylinder(self, 0.18, 0.5, Vector3(0, 2.5, 0), Art.material(Color("#ffb73d")), true)
         attack_marker.visible = false
@@ -288,6 +297,10 @@ func _hit_reaction(source_position: Vector3) -> void:
 func _lunge() -> void:
     if visual_root == null:
         return
+    if detail_animation:
+        detail_animation.play("attack", 0.04)
+        detail_attack_time = 0.4
+        return
     var tween := create_tween()
     tween.tween_property(visual_root, "scale", base_scale * Vector3(0.9, 0.9, 1.18), 0.08)
     tween.tween_property(visual_root, "scale", base_scale, 0.12)
@@ -296,3 +309,50 @@ func _lunge() -> void:
         swing.tween_property(weapon_root, "rotation_degrees:x", -75.0, 0.08)
         swing.tween_property(weapon_root, "rotation_degrees:x", 35.0, 0.12)
         swing.tween_property(weapon_root, "rotation_degrees:x", 0.0, 0.11)
+
+func _install_sample_guard() -> bool:
+    if get_parent().get("stage_number") != 1 or archetype != "guard":
+        return false
+    # Reuse the detailed authored 17-bone armor and its five animation clips.
+    # The original .blend remains the shared editable source, not a mockup.
+    var model := preload("res://assets/models/knight_study.glb").instantiate() as Node3D
+    model.name = "EnemyRig"
+    model.position.y = -0.9
+    model.scale = Vector3.ONE * 0.9
+    visual_root.add_child(model)
+    detail_animation = model.find_child("AnimationPlayer", true, false) as AnimationPlayer
+    body_mesh = model.find_child("KnightRuntime", true, false) as MeshInstance3D
+    var material := ShaderMaterial.new()
+    material.shader = preload("res://assets/materials/side_guard.gdshader")
+    material.set_shader_parameter("armor_atlas", preload("res://assets/models/knight_study_KnightRuntime_color.png"))
+    material.set_shader_parameter("armor_normal", preload("res://assets/models/knight_study_KnightRuntime_normal.png"))
+    material.set_shader_parameter("armor_orm", preload("res://assets/models/knight_study_KnightRuntime_metallic-KnightRuntime_roughness.png"))
+    body_mesh.material_override = material
+    var skeleton := model.find_child("Skeleton3D", true, false) as Skeleton3D
+    for item in [["hand.R", "res://assets/models/broadsword_study.glb"], ["hand.L", "res://assets/models/kite_shield_study.glb"]]:
+        var socket := BoneAttachment3D.new()
+        socket.bone_name = item[0]
+        skeleton.add_child(socket)
+        var prop := (load(item[1]) as PackedScene).instantiate() as Node3D
+        prop.rotation.z = PI
+        prop.position = Vector3(0,0.3,0.12) if item[0] == "hand.L" else Vector3(0,0.15,0)
+        socket.add_child(prop)
+        if item[0] == "hand.L":
+            _guard_shield_color(prop)
+    for clip in ["idle", "run"]:
+        detail_animation.get_animation(clip).loop_mode = Animation.LOOP_LINEAR
+    detail_animation.play("idle")
+    set_meta("detailed_side_guard", true)
+    return true
+
+func _guard_shield_color(node: Node) -> void:
+    if node is MeshInstance3D:
+        var mesh := node as MeshInstance3D
+        var mat := ShaderMaterial.new()
+        mat.shader = preload("res://assets/materials/side_guard.gdshader")
+        mat.set_shader_parameter("armor_atlas", preload("res://assets/models/kite_shield_study_ShieldRuntime_color.png"))
+        mat.set_shader_parameter("armor_normal", preload("res://assets/models/kite_shield_study_ShieldRuntime_normal.png"))
+        mat.set_shader_parameter("armor_orm", preload("res://assets/models/kite_shield_study_ShieldRuntime_metallic-ShieldRuntime_roughness.png"))
+        mesh.material_override = mat
+    for child in node.get_children():
+        _guard_shield_color(child)

@@ -116,6 +116,7 @@ func _physics_process(delta: float) -> void:
         position.x = 0.0
         velocity.x = 0.0
     _update_model_animation(delta)
+    _update_side_presentation()
     for i in range(legs.size()):
         var stride := sin(Time.get_ticks_msec() * 0.016 + i * PI) * 0.45
         var moving := Vector2(velocity.x, velocity.z).length() > 0.2 and is_on_floor()
@@ -305,3 +306,10 @@ func _damage_flash(was_blocked: bool) -> void:
     await get_tree().create_timer(0.11).timeout
     if is_instance_valid(mat):
         mat.albedo_color = original
+
+func _update_side_presentation() -> void:
+    # Turn only the artwork toward the side camera; collision and attack facing
+    # stay on the authored Z axis. No nonuniform body scaling.
+    if visual_root and camera_pivot:
+        var active: bool = get_parent().stage_number == 1 and bool(camera_pivot.get("side_view"))
+        visual_root.rotation.y = -0.55 * (1.0 if cos(rotation.y) >= 0.0 else -1.0) if active else 0.0

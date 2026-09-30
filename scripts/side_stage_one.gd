@@ -4,6 +4,7 @@ const Art = preload("res://scripts/art.gd")
 const Enemy = preload("res://scripts/enemy.gd")
 const Hazard = preload("res://scripts/stage_hazard.gd")
 const WorldScenery = preload("res://scripts/world_scenery.gd")
+const SampleArt = preload("res://scripts/side_sample_art.gd")
 const END_Z := 225.0
 const HALF_WIDTH := 2.6
 # [start, end, start height, end height]; omitted intervals are real holes.
@@ -32,7 +33,7 @@ static func height_at(z: float) -> float:
 static func build(game: Node3D) -> void:
     game.player.floor_snap_length = 0.35
     game.player.floor_constant_speed = true
-    var stone := Art.material(Color("#c5b58e"))
+    var stone := Art.material(Color("#e4d2ae"))
     stone.albedo_texture = load("res://assets/models/courtyard_environment_pavestone_0.png")
     stone.uv1_triplanar = true
     stone.uv1_scale = Vector3.ONE * 0.5
@@ -68,6 +69,7 @@ static func build(game: Node3D) -> void:
     game.set_meta("side_course_gaps",GAPS)
     _background(game)
     _finish_flag(game)
+    SampleArt.build(game)
 
 static func _terrain(game: Node3D, segment: Array, index: int, stone: Material, cap: Material) -> void:
     var z0: float = segment[0]
@@ -113,7 +115,19 @@ static func _block(game: Node3D, node_name: String, dimensions: Vector3, at: Vec
     var collision := CollisionShape3D.new()
     collision.shape = shape
     body.add_child(collision)
-    Art.box(body,dimensions,Vector3.ZERO,material)
+    var surface := material
+    if node_name == "CourtyardHurdle0":
+        var masonry := Art.material(Color.WHITE)
+        masonry.albedo_texture = preload("res://assets/terrain/sample_limestone.svg")
+        masonry.roughness = 0.9
+        surface = masonry
+    Art.box(body,dimensions,Vector3.ZERO,surface)
+    if node_name == "CourtyardHurdle0":
+        var pale := Art.material(Color("#ead9b4"))
+        # Trim stays within the tested collider; it cannot create an unseen step.
+        Art.box(body,Vector3(dimensions.x,0.10,dimensions.z),Vector3(0,dimensions.y*0.5-0.05,0),pale)
+        for z in [-0.35,0.0,0.35]:
+            Art.box(body,Vector3(0.012,dimensions.y-0.12,0.025),Vector3(-dimensions.x*0.5-0.006,-0.04,z),Art.material(Color("#957957")))
     game.add_child(body)
 
 static func _enemy(game: Node3D, kind: String, z: float) -> void:

@@ -2,7 +2,7 @@
 
 Android action-platformer prototype built with Godot 4 Mobile renderer. Current focus: the first side-scrolling level, expanded to 240 m with hills, valleys and a water ditch. Nine earlier stages, three difficulty settings, touch controls and the 3D preview remain available.
 
-**Current design and continuation guide:** [docs/PROJECT_HANDOFF.md](docs/PROJECT_HANDOFF.md). **0.1.7 side-view notes:** [art/SIDE_VIEW_0.1.7.md](art/SIDE_VIEW_0.1.7.md). **Asset inventory:** [docs/ASSET_MANIFEST.md](docs/ASSET_MANIFEST.md).
+**0.1.8 art sample:** [docs/SIDE_SAMPLE_0.1.8.md](docs/SIDE_SAMPLE_0.1.8.md). **Current design and continuation guide:** [docs/PROJECT_HANDOFF.md](docs/PROJECT_HANDOFF.md). **0.1.7 side-view notes:** [art/SIDE_VIEW_0.1.7.md](art/SIDE_VIEW_0.1.7.md). **Asset inventory:** [docs/ASSET_MANIFEST.md](docs/ASSET_MANIFEST.md).
 
 See `FORDITOTT_SUPERMARIO_PROJECT.md` for the complete Hungarian design summary.
 

@@ -134,7 +134,7 @@ jobs:
         shell: bash
         run: |
           GODOT="$(find "$HOME/.local/share/godot/godot_executable" -maxdepth 1 -type f -name 'Godot*_linux.x86_64' -print -quit)"
-          for TEST in knight_model_smoke world_art_smoke side_view_smoke first_course_smoke; do
+          for TEST in knight_model_smoke world_art_smoke side_view_smoke first_course_smoke side_sample_smoke; do
             timeout 120s "$GODOT" --headless --audio-driver Dummy --path . --script "res://tests/$TEST.gd" 2>&1 | tee "$TEST.log"
             if grep -E 'SCRIPT ERROR|ERROR:' "$TEST.log"; then exit 1; fi
             grep -q '_SMOKE_OK' "$TEST.log"
@@ -155,6 +155,7 @@ jobs:
           GODOT="$(find "$HOME/.local/share/godot/godot_executable" -maxdepth 1 -type f -name 'Godot*_linux.x86_64' -print -quit)"
           timeout 90s xvfb-run -a "$GODOT" --path . --rendering-method gl_compatibility --audio-driver Dummy --script res://tests/preview_capture.gd 2>&1 | tee preview.log
           timeout 90s xvfb-run -a "$GODOT" --path . --rendering-method gl_compatibility --audio-driver Dummy --script res://tests/side_course_preview.gd 2>&1 | tee -a preview.log
+          timeout 90s xvfb-run -a "$GODOT" --path . --rendering-method gl_compatibility --audio-driver Dummy --script res://tests/side_sample_preview.gd 2>&1 | tee -a preview.log
           if grep -E 'SCRIPT ERROR|ERROR:' preview.log; then
             exit 1
           fi
@@ -192,6 +193,7 @@ jobs:
             world_art_smoke.log
             side_view_smoke.log
             first_course_smoke.log
+            side_sample_smoke.log
             preview.log
           if-no-files-found: warn
           retention-days: 14
@@ -216,9 +218,9 @@ jobs:
           BUILD_NUMBER: ${{ github.run_number }}
         shell: bash
         run: |
-          TAG="preview-0.1.7-${BUILD_NUMBER}"
+          TAG="preview-0.1.8-${BUILD_NUMBER}"
           if gh release view "$TAG" >/dev/null 2>&1; then
             gh release upload "$TAG" delivery/* --clobber
           else
-            gh release create "$TAG" delivery/* --target "$BUILD_SHA" --prerelease --title "0.1.7 – első oldalnézeti pálya (teszt)" --notes-file delivery/RELEASE_NOTES.md
+            gh release create "$TAG" delivery/* --target "$BUILD_SHA" --prerelease --title "0.1.8 – játszható grafikai mintaszakasz" --notes-file delivery/RELEASE_NOTES.md
           fi

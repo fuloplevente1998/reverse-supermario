@@ -19,7 +19,9 @@ func _layout() -> void:
     size = Vector2(186, 186)
     var viewport_size := get_viewport_rect().size
     # Anchor to actual bottom-left across Android aspect ratios.
-    position = Vector2(28, maxf(180.0, viewport_size.y - size.y - 34.0))
+    var game := get_node("../../..")
+    var safe: Rect2 = game.mobile_safe_rect() if game.has_method("mobile_safe_rect") else Rect2(Vector2.ZERO,viewport_size)
+    position = Vector2(safe.position.x+28,maxf(180.0,safe.end.y-size.y-34.0))
     queue_redraw()
 
 func _reset_pointer() -> void:

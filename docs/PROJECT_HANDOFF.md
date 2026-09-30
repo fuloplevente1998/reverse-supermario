@@ -1,5 +1,8 @@
 # Reverse Platformer – folytatási és tervezési leírás
-Állapot: 0.1.7-side, 2026-09-30. Aktív fejlesztési ág: `art/blender-knight-study`.
+Állapot: 0.1.8-art-sample, 2026-09-30. Aktív fejlesztési ág: `art/blender-knight-study`.
+
+A legfrissebb grafikai mintaszakasz döntései, forrásai, tesztjei és korlátai: [SIDE_SAMPLE_0.1.8.md](SIDE_SAMPLE_0.1.8.md).
+Az alábbi 0.1.7 útvonal és történeti ellenőrzés megmarad; a legújabb eredményeket mindig a hozzá tartozó CI commit alapján kell olvasni.
 
 ## A felhasználó által rögzített irány
 - Először kizárólag az 1. pálya oldalnézetes változatát kell kidolgozni.

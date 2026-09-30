@@ -1,6 +1,8 @@
 # Reverse Platformer (working title)
 
-Android third-person action-platformer prototype built with Godot 4 Mobile renderer. Ten playable levels, three difficulty settings, touch joystick, and switchable cameras.
+Android action-platformer prototype built with Godot 4 Mobile renderer. Current focus: the first side-scrolling level, expanded to 240 m with hills, valleys and a water ditch. Nine earlier stages, three difficulty settings, touch controls and the 3D preview remain available.
+
+**Current design and continuation guide:** [docs/PROJECT_HANDOFF.md](docs/PROJECT_HANDOFF.md). **0.1.7 side-view notes:** [art/SIDE_VIEW_0.1.7.md](art/SIDE_VIEW_0.1.7.md). **Asset inventory:** [docs/ASSET_MANIFEST.md](docs/ASSET_MANIFEST.md).
 
 See `FORDITOTT_SUPERMARIO_PROJECT.md` for the complete Hungarian design summary.
 
@@ -17,7 +19,7 @@ Android:
 - left virtual joystick around the lower two-thirds of the screen and jump/attack/block buttons
 - NÉZETVÁLTÁS: switch camera; in side view, right moves toward the gate
 
-The game opens on a start screen with Continue/Start, level selection and difficulty. The in-game menu and end screen return to the start screen. All ten stages have solid outer boundaries with visible low railings, while their intentional internal jump gaps remain. The scene uses brighter daylight and lighter ground materials.
+The game opens on a start screen with Continue/Start, level selection and difficulty. The in-game menu and end screen return to the start screen. All ten stages have invisible solid outer boundaries without railings, while their intentional internal jump gaps remain. The scene uses brighter daylight and lighter ground materials.
 
 Each gate unlocks the next level and saves progress locally. The final gate requires defeating the captain. Ten authored stage layouts introduce jump hurdles, moving bridges, timed spikes, fire jets, sweeping saws, ice patches and stair ridges. Falling into a gap costs health and returns the player to the latest checkpoint. The PÁLYÁK menu pauses gameplay and allows unlocked level selection; changing difficulty restarts the current level.
 

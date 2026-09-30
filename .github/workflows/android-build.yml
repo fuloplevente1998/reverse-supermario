@@ -159,6 +159,18 @@ jobs:
             exit 1
           fi
 
+      - name: Package complete project and single APK
+        shell: bash
+        run: python3 tools/package_delivery.py
+
+      - name: Upload complete delivery
+        uses: actions/upload-artifact@v4
+        with:
+          name: complete-project-and-apk
+          path: delivery/*
+          if-no-files-found: error
+          retention-days: 90
+
       - name: Upload gameplay previews
         if: always()
         uses: actions/upload-artifact@v4
@@ -183,3 +195,30 @@ jobs:
             preview.log
           if-no-files-found: warn
           retention-days: 14
+
+  publish-preview:
+    needs: build-android
+    if: github.ref == 'refs/heads/art/blender-knight-study'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download validated delivery
+        uses: actions/download-artifact@v4
+        with:
+          name: complete-project-and-apk
+          path: delivery
+      - name: Publish complete preview package
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          BUILD_SHA: ${{ github.sha }}
+          BUILD_NUMBER: ${{ github.run_number }}
+        shell: bash
+        run: |
+          TAG="preview-0.1.7-${BUILD_NUMBER}"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" delivery/* --clobber
+          else
+            gh release create "$TAG" delivery/* --target "$BUILD_SHA" --prerelease --title "0.1.7 – első oldalnézeti pálya (teszt)" --notes-file delivery/RELEASE_NOTES.md
+          fi

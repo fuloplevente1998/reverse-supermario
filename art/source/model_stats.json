@@ -1,10 +1,11 @@
 {
-  "stage": "Second modeling pass with baked PBR and five basic motion clips",
-  "character_triangles": 11228,
+  "stage": "Third modeling pass: weighted cape, armor crests and procedural wear",
+  "character_triangles": 12452,
   "runtime_meshes": 1,
   "runtime_materials": 1,
   "texture_atlas": 1024,
-  "bones": 14,
+  "bones": 17,
+  "cape_bones": 3,
   "animations": [
     "idle",
     "run",
@@ -14,7 +15,7 @@
   ],
   "limitations": [
     "Rigid armor weighting",
-    "Cape bound to chest",
-    "No hand-painted damage or cloth simulation"
+    "Cape has authored bone motion, not cloth physics",
+    "Procedural wear, not hand-painted texture work"
   ]
 }

@@ -24,6 +24,21 @@ def material(name, color, metal=0, rough=.6):
     ramp=n.new('ShaderNodeValToRGB')
     ramp.color_ramp.elements[0].color=(*(c*.72 for c in color),1)
     ramp.color_ramp.elements[1].color=(*color,1)
+    if metal > .5:
+        # Sparse brighter metal flecks, with fine scratches in the normal map.
+        wear=n.new('ShaderNodeTexNoise');wear.inputs['Scale'].default_value=22
+        wear.inputs['Detail'].default_value=3
+        chips=n.new('ShaderNodeValToRGB')
+        chips.color_ramp.elements[0].position=.63
+        chips.color_ramp.elements[0].color=(*color,1)
+        chips.color_ramp.elements[1].position=.79
+        chips.color_ramp.elements[1].color=(*(min(.8,c*1.7+.035) for c in color),1)
+        links.new(wear.outputs['Fac'],chips.inputs[0])
+        links.new(chips.outputs[0],p.inputs['Base Color'])
+    roughmap=n.new('ShaderNodeMapRange')
+    roughmap.inputs['To Min'].default_value=max(.1,rough-.12)
+    roughmap.inputs['To Max'].default_value=min(1,rough+.10)
+    links.new(tex.outputs['Fac'],roughmap.inputs['Value']);links.new(roughmap.outputs[0],p.inputs['Roughness'])
     links.new(tex.outputs['Fac'],ramp.inputs[0]);links.new(ramp.outputs['Color'],p.inputs['Base Color'])
     bump=n.new('ShaderNodeBump');bump.inputs['Strength'].default_value=.15
     bump.inputs['Distance'].default_value=.007 if metal else .002
@@ -146,6 +161,11 @@ for s in [-1,1]:
 plate('Central helmet ridge',[(0,-.25,2.105),(-.025,-.29,1.94),(0,-.33,1.87),(.025,-.29,1.94)],.025,gold,'head')
 
 # Folded scarf, scalloped cape and geometric original emblem.
+rimmed('Forehead diamond',[(-.045,-.273,1.98),(0,-.295,2.025),(.045,-.273,1.98),(0,-.32,1.93)],gold,'head',.022)
+plate('Chest angular crest',[(-.10,-.368,1.43),(-.035,-.382,1.46),(0,-.392,1.37),(.035,-.382,1.46),(.10,-.368,1.43),(.06,-.382,1.36),(0,-.40,1.29),(-.06,-.382,1.36)],.012,gold,'chest',.003)
+for s,suffix in [(-1,'L'),(1,'R')]:
+    for z in [1.40,1.49]:
+        ellipsoid('Pauldron rivet '+suffix+str(z),(s*.48,-.252,z),(.022,.015,.022),gold,'upper_arm.'+suffix)
 for j in range(3):
     tube('Scarf fold '+str(j),[(-.29,.05,1.59-j*.04),(-.25,-.22,1.58-j*.04),(0,-.30,1.55-j*.04),(.25,-.22,1.58-j*.04),(.29,.05,1.59-j*.04)],[.045]*5,red,'chest',12)
 verts=[];faces=[];nx=12;nz=14

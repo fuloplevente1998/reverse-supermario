@@ -13,6 +13,31 @@ source=[o for o in scene.objects if o.type=='MESH' and o.parent==rig]
 sword=[o for o in scene.objects if o.name.startswith('Sword')]
 shield=[o for o in scene.objects if o.name.startswith(('Kite shield','Shield'))]
 
+# Three deforming cape bones, with a fixed shoulder attachment and blended hem.
+bpy.context.view_layer.objects.active=rig;rig.select_set(True)
+bpy.ops.object.mode_set(mode='EDIT')
+cape_joints=[('cape_upper',(0,.23,1.52),(0,.30,1.10),'chest'),
+             ('cape_middle',(0,.30,1.10),(0,.38,.70),'cape_upper'),
+             ('cape_lower',(0,.38,.70),(0,.43,.28),'cape_middle')]
+for name,head,tail,parent in cape_joints:
+    b=rig.data.edit_bones.new(name);b.head=head;b.tail=tail;b.parent=rig.data.edit_bones[parent]
+bpy.ops.object.mode_set(mode='OBJECT');rig.select_set(False)
+cape_objects=[o for o in source if o.name.startswith(('Folded burgundy cape','Cape gold edge','Cape crest'))]
+for o in cape_objects:
+    o.vertex_groups.clear()
+    vg={n:o.vertex_groups.new(name=n) for n in ['chest','cape_upper','cape_middle','cape_lower']}
+    for v in o.data.vertices:
+        z=(o.matrix_world @ v.co).z
+        if z>=1.42:
+            chest=min(1,(z-1.42)/.10);weights={'chest':chest,'cape_upper':1-chest}
+        elif z>=1.10:
+            u=min(1,(1.42-z)/.32);weights={'cape_upper':1-u,'cape_middle':u}
+        elif z>=.70:
+            u=(1.10-z)/.40;weights={'cape_middle':1-u,'cape_lower':u}
+        else:weights={'cape_lower':1.0}
+        for name,w in weights.items():
+            if w>0:vg[name].add([v.index],w,'REPLACE')
+
 def combine_bake(name,parts,res):
     copies=[]
     for o in parts:
@@ -35,7 +60,9 @@ def combine_bake(name,parts,res):
             if kind in ['roughness','metallic']:
                 p=n.get('Principled BSDF');out=next(x for x in n if x.type=='OUTPUT_MATERIAL')
                 emit=n.new('ShaderNodeEmission');value=p.inputs[kind.capitalize()].default_value
-                emit.inputs['Color'].default_value=(value,value,value,1)
+                socket=p.inputs[kind.capitalize()]
+                if socket.is_linked:links.new(socket.links[0].from_socket,emit.inputs['Color'])
+                else:emit.inputs['Color'].default_value=(value,value,value,1)
                 old=out.inputs['Surface'].links[0].from_socket
                 links.new(emit.outputs[0],out.inputs['Surface']);outputs.append((m,out,old,emit))
         if kind=='color':bpy.ops.object.bake(type='DIFFUSE',pass_filter={'COLOR'})
@@ -69,6 +96,12 @@ def clip(name,frames,pose):
         for bone in rig.pose.bones:
             bone.rotation_mode='XYZ';bone.rotation_euler=(0,0,0);bone.location=(0,0,0)
         pose(t)
+        for i,bone_name in enumerate(['cape_upper','cape_middle','cape_lower']):
+            amp={'idle':.025,'run':.16,'attack':.12,'block':.04,'jump':.20}[name]
+            loop=name in ['idle','run']
+            wave=math.sin(t*math.tau-i*.35) if loop else math.sin(t*math.pi)
+            rig.pose.bones[bone_name].rotation_euler.x=amp*(.5+wave)
+            rig.pose.bones[bone_name].rotation_euler.z=amp*.25*math.sin(t*math.tau+i*.4) if loop else amp*.2*wave
         for bone in rig.pose.bones:
             bone.keyframe_insert(data_path='rotation_euler',frame=frame,group=bone.name)
             bone.keyframe_insert(data_path='location',frame=frame,group=bone.name)
@@ -130,6 +163,6 @@ cam=scene.camera
 for name,loc in [('front',(0,-7,2.25)),('three_quarter',(3,-6,2.9)),('back',(-3,6,2.7))]:
     cam.location=loc;cam.rotation_euler=(Vector((0,0,1.13))-cam.location).to_track_quat('-Z','Y').to_euler()
     scene.render.filepath=str(OUT/('knight_'+name+'.png'));bpy.ops.render.render(write_still=True)
-stats={'stage':'Second modeling pass with baked PBR and five basic motion clips', 'character_triangles':sum(len(p.vertices)-2 for p in runtime.data.polygons),'runtime_meshes':1,'runtime_materials':1,'texture_atlas':1024,'bones':len(rig.data.bones),'animations':['idle','run','attack','block','jump'],'limitations':['Rigid armor weighting','Cape bound to chest','No hand-painted damage or cloth simulation']}
+stats={'stage':'Third modeling pass: weighted cape, armor crests and procedural wear', 'character_triangles':sum(len(p.vertices)-2 for p in runtime.data.polygons),'runtime_meshes':1,'runtime_materials':1,'texture_atlas':1024,'bones':len(rig.data.bones),'cape_bones':3,'animations':['idle','run','attack','block','jump'],'limitations':['Rigid armor weighting','Cape has authored bone motion, not cloth physics','Procedural wear, not hand-painted texture work']}
 (OUT/'model_stats.json').write_text(json.dumps(stats,indent=2))
 print(json.dumps(stats))

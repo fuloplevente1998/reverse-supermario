@@ -12,7 +12,9 @@ func _verify() -> void:
     assert(player.model_animation != null, "Imported AnimationPlayer missing")
     assert(player.body_mesh != null, "Imported runtime mesh missing")
     var skeleton = player.visual_root.find_child("Skeleton3D", true, false) as Skeleton3D
-    assert(skeleton != null and skeleton.get_bone_count() == 14, "Skeleton mismatch")
+    assert(skeleton != null and skeleton.get_bone_count() == 17, "Skeleton mismatch")
+    for bone in ["cape_upper", "cape_middle", "cape_lower"]:
+        assert(skeleton.find_bone(bone) >= 0, "Cape bone missing: " + bone)
     var sockets := 0
     for child in skeleton.get_children():
         if child is BoneAttachment3D:
@@ -25,6 +27,10 @@ func _verify() -> void:
         player.model_animation.play(clip)
         player.model_animation.advance(0.15)
         assert(player.model_animation.current_animation == clip, "Clip not playing")
+    player.model_animation.play("run")
+    player.model_animation.advance(0.21)
+    var cape_bone := skeleton.find_bone("cape_lower")
+    assert(skeleton.get_bone_pose_rotation(cape_bone).angle_to(Quaternion.IDENTITY) > 0.01, "Cape clip has no movement")
     player.blocking = false
     player.attack()
     assert(player.model_animation.current_animation == "attack", "Attack animation not connected")
@@ -38,7 +44,7 @@ func _verify() -> void:
     # Test all clip tracks resolve on the imported rig, then normal game processing.
     for i in range(10):
         await physics_frame
-    print("KNIGHT_MODEL_SMOKE_OK: 14 bones, 5 clips, 2 attached weapons, attack/block transitions")
+    print("KNIGHT_MODEL_SMOKE_OK: 17 bones, moving cape, 5 clips, 2 attached weapons, attack/block transitions")
     stage.queue_free()
     await process_frame
     quit(0)

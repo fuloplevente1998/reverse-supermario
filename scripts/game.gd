@@ -30,6 +30,8 @@ var checkpoint_position := Vector3(0, 1.1, -10)
 var side_view := false
 
 func set_side_view(enabled: bool) -> void:
+    if side_view == enabled:
+        return
     side_view = enabled
     var actors: Array = [player]
     for group in ["enemies", "hazards", "projectiles", "moving_platforms"]:
@@ -72,6 +74,8 @@ func _ready() -> void:
     _connect_gameplay()
     _bind_touch_buttons()
     _on_hp_changed(player.hp)
+    if stage_number == 1:
+        $Player/CameraPivot.set_view(true)
 
 func _physics_process(_delta: float) -> void:
     if not ended and player.global_position.y < -6.0:
@@ -85,10 +89,22 @@ func _on_trap_entered(body: Node3D) -> void:
     if body == player and not ended:
         player.take_damage(_hazard_damage(20))
 
-func _on_checkpoint_entered(body: Node3D) -> void:
-    if body == player and not ended:
-        checkpoint_position = Vector3(0, 1.1, 16.0)
+func _recover_water() -> void:
+    if ended:
+        return
+    player.global_position = checkpoint_position
+    player.velocity = Vector3.ZERO
+    player.take_damage(_hazard_damage(25))
+    if not ended:
+        _pulse_status("VIZES ÁROK — VISSZA AZ ELLENŐRZŐPONTRA")
+
+func _on_checkpoint_entered(body: Node3D, spawn: Vector3 = Vector3(0, 1.1, 16.0)) -> void:
+    if body == player and not ended and spawn.z > checkpoint_position.z:
+        checkpoint_position = spawn
         _pulse_status("ELLENŐRZŐPONT AKTÍV")
+
+func side_ground_height(z: float) -> float:
+    return StageGenerator.ground_height(stage_number, z)
 
 func _connect_gameplay() -> void:
     player.hp_changed.connect(_on_hp_changed)
@@ -529,10 +545,12 @@ func _build_boundaries() -> void:
     var stone := StandardMaterial3D.new()
     stone.albedo_color = Color(0.49, 0.57, 0.6)
     stone.roughness = 0.92
-    _boundary("BoundaryWest", Vector3(-half_width, 5, 15), Vector3(0.5, 12, 60), stone)
-    _boundary("BoundaryEast", Vector3(half_width, 5, 15), Vector3(0.5, 12, 60), stone)
+    var end_z := StageGenerator.end_z(stage_number)
+    var center_z := (end_z - 15.0) * 0.5
+    _boundary("BoundaryWest", Vector3(-half_width, 5, center_z), Vector3(0.5, 12, end_z + 15), stone)
+    _boundary("BoundaryEast", Vector3(half_width, 5, center_z), Vector3(0.5, 12, end_z + 15), stone)
     _boundary("BoundaryRear", Vector3(0, 5, -14.7), Vector3(half_width * 2, 12, 0.5), stone)
-    _boundary("BoundaryFront", Vector3(0, 5, 44.7), Vector3(half_width * 2, 12, 0.5), stone)
+    _boundary("BoundaryFront", Vector3(0, 5, end_z - 0.3), Vector3(half_width * 2, 12, 0.5), stone)
 
 func _boundary(node_name: String, center: Vector3, dimensions: Vector3, stone: Material) -> void:
     var body := StaticBody3D.new()

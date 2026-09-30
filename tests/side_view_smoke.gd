@@ -20,7 +20,9 @@ func _verify() -> void:
         player.position=Vector3(4,0.93,-10)
         player.velocity=Vector3.ZERO
         var camera=player.get_node("CameraPivot")
-        camera.toggle_view()
+        camera.set_view(false)
+        player.position=Vector3(4,0.93,-10)
+        camera.set_view(true)
         assert(player.position.x==0 and stage.side_view)
         assert(camera.camera.projection==Camera3D.PROJECTION_ORTHOGONAL)
         var screen_start: Vector2=camera.camera.unproject_position(player.global_position)

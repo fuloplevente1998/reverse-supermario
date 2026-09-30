@@ -36,6 +36,8 @@ var camera_yaw: float = 0.0
 var legs: Array[Node3D] = []
 var model_animation: AnimationPlayer
 var model_attack_time: float = 0.0
+var jump_buffer := 0.0
+var coyote_time := 0.0
 const Art = preload("res://scripts/art.gd")
 const KNIGHT_MODEL = preload("res://assets/models/knight_study.glb")
 const KNIGHT_SWORD = preload("res://assets/models/broadsword_study.glb")
@@ -55,8 +57,14 @@ func _physics_process(delta: float) -> void:
         velocity += get_gravity() * delta
 
     var wants_jump: bool = Input.is_action_just_pressed("jump") or touch_jump
-    if wants_jump and is_on_floor():
+    var platformer: bool = get_parent().stage_number == 1 and bool(camera_pivot.get("side_view"))
+    if platformer:
+        coyote_time = 0.10 if is_on_floor() else maxf(0.0,coyote_time-delta)
+        jump_buffer = 0.12 if wants_jump else maxf(0.0,jump_buffer-delta)
+    if (platformer and jump_buffer>0.0 and coyote_time>0.0) or (not platformer and wants_jump and is_on_floor()):
         velocity.y = jump_velocity
+        jump_buffer = 0.0
+        coyote_time = 0.0
         _jump_squash()
     touch_jump = false
 

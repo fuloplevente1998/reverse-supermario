@@ -5,6 +5,7 @@ const WorldScenery = preload("res://scripts/world_scenery.gd")
 const MovingPlatform = preload("res://scripts/moving_platform.gd")
 const EnemyScript = preload("res://scripts/enemy.gd")
 const Hazard = preload("res://scripts/stage_hazard.gd")
+const SideStageOne = preload("res://scripts/side_stage_one.gd")
 
 # Authored layouts: geometry and encounter placement differ, not only the palette.
 const STAGES := [
@@ -24,7 +25,15 @@ static func title(number: int) -> String:
     return str(STAGES[number - 1]["name"])
 
 static func width(number: int) -> float:
+    if number == 1:
+        return 6.0
     return float(STAGES[number - 1]["width"])
+
+static func end_z(number: int) -> float:
+    return SideStageOne.END_Z if number == 1 else 45.0
+
+static func ground_height(number: int, z: float) -> float:
+    return SideStageOne.height_at(z) if number == 1 else 0.0
 
 static func build(game: Node3D, number: int) -> void:
     var recipe: Dictionary = STAGES[number - 1]
@@ -44,6 +53,12 @@ static func build(game: Node3D, number: int) -> void:
         floor_material.uv1_triplanar = true
         floor_material.uv1_scale = Vector3.ONE * 0.5
     var trim := Art.material(Color("#dbbd7f"), 0.3)
+    if number == 1:
+        SideStageOne.build(game)
+        _scenery(game, number, recipe, stone, trim)
+        game.set_meta("layout_id", number)
+        game.set_meta("difficulty", difficulty)
+        return
     var gaps: Array = recipe["gaps"]
     var start := -15.0
     var index := 0
@@ -237,6 +252,7 @@ static func _ice(game: Node3D, z: float) -> void:
     )
 
 static func _scenery(game: Node3D, number: int, recipe: Dictionary, stone: Material, trim: Material) -> void:
+    var existing := game.get_children()
     var env: Environment = game.get_node("WorldEnvironment").environment
     var sky: ProceduralSkyMaterial = env.sky.sky_material
     # Stage one has art-directed daylight; other biomes keep unique palettes.
@@ -313,7 +329,7 @@ static func _scenery(game: Node3D, number: int, recipe: Dictionary, stone: Mater
             var visual := gate_scene.instantiate() as Node3D
             if visual:
                 visual.name = "FortressGateVisual"
-                visual.position = Vector3(0, 0, 40)
+                visual.position = Vector3(0, 0, end_z(number) - 5.0)
                 game.add_child(visual)
                 custom_gate = true
     if not custom_gate:
@@ -322,3 +338,12 @@ static func _scenery(game: Node3D, number: int, recipe: Dictionary, stone: Mater
         Art.box(game, Vector3(5.8, 0.65, 1.1), Vector3(0, 5.2, 40), trim)
     if number == 10:
         Art.box(game, Vector3(3, 4, 1), Vector3(0, 2, 43), trim)
+    # Imported 3D scenery has its own layer. The side camera uses a clean backdrop.
+    for child in game.get_children():
+        if child not in existing:
+            WorldScenery.set_render_layer(child, 2)
+    if number != 1:
+        # Existing stages keep their current art until their own side-view pass.
+        for child in game.get_children():
+            if child not in existing:
+                WorldScenery.set_render_layer(child, 3)

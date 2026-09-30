@@ -5,6 +5,12 @@ extends RefCounted
 static var prefabs: Dictionary = {}
 static var terrain_materials: Dictionary = {}
 
+static func set_render_layer(node: Node, layer: int) -> void:
+    if node is GeometryInstance3D:
+        node.layers = layer
+    for child in node.get_children():
+        set_render_layer(child, layer)
+
 static func terrain_material(number: int) -> StandardMaterial3D:
     var biome := "snow" if number == 4 else ("grass" if number in [1,3,6] else "earth")
     if not terrain_materials.has(biome):

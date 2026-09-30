@@ -69,7 +69,8 @@ func _verify() -> void:
             if not _check(stage.get_node_or_null("Checkpoint") != null, "Checkpoint missing"):
                 return
             # Verify physical outer walls using ray hits, not just node names.
-            var rays := [Vector3(-30,8,15), Vector3(30,8,15), Vector3(0,8,-25), Vector3(0,8,55)]
+            var end_z: float = stage.StageGenerator.end_z(number)
+            var rays := [Vector3(-30,8,15), Vector3(30,8,15), Vector3(0,8,-25), Vector3(0,8,end_z+10)]
             var names := ["BoundaryWest","BoundaryEast","BoundaryRear","BoundaryFront"]
             for i in range(4):
                 var query := PhysicsRayQueryParameters3D.create(Vector3(0,8,15), rays[i])

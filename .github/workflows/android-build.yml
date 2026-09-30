@@ -70,6 +70,28 @@ jobs:
           path: artifact/ReversePlatformer-debug.apk
           if-no-files-found: error
 
+      # Also expose two small transfer archives for clients with a 32 MiB
+      # single-file transfer ceiling. Concatenate part00.bin then part01.bin.
+      - name: Prepare APK transfer parts
+        shell: bash
+        run: |
+          mkdir -p artifact-parts
+          split -n 2 -d --additional-suffix=.bin artifact/ReversePlatformer-debug.apk artifact-parts/ReversePlatformer.apk.part
+
+      - name: Upload APK transfer part 1
+        uses: actions/upload-artifact@v4
+        with:
+          name: ReversePlatformer-apk-part1
+          path: artifact-parts/ReversePlatformer.apk.part00.bin
+          if-no-files-found: error
+
+      - name: Upload APK transfer part 2
+        uses: actions/upload-artifact@v4
+        with:
+          name: ReversePlatformer-apk-part2
+          path: artifact-parts/ReversePlatformer.apk.part01.bin
+          if-no-files-found: error
+
       - name: Smoke test first level
         shell: bash
         run: |

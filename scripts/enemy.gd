@@ -40,6 +40,9 @@ func _physics_process(delta: float) -> void:
         return
     if not is_on_floor():
         velocity += get_gravity() * delta
+    var on_center_line: bool = get_parent().get("side_view") == true
+    if on_center_line:
+        position.x = 0.0
     if global_position.y < -8:
         take_damage(hp + 1)
         return
@@ -71,8 +74,13 @@ func _physics_process(delta: float) -> void:
     if not attack_ready and archetype != "scout":
         desired = Vector3.ZERO
     velocity.x = desired.x
+    if on_center_line:
+        velocity.x = 0.0
     velocity.z = desired.z
     move_and_slide()
+    if on_center_line:
+        position.x = 0.0
+        velocity.x = 0.0
     for i in range(legs.size()):
         var moving := Vector2(velocity.x, velocity.z).length() > 0.2
         legs[i].rotation.x = sin(Time.get_ticks_msec() * 0.013 + i * PI) * 0.35 if moving else 0.0
@@ -288,4 +296,3 @@ func _lunge() -> void:
         swing.tween_property(weapon_root, "rotation_degrees:x", -75.0, 0.08)
         swing.tween_property(weapon_root, "rotation_degrees:x", 35.0, 0.12)
         swing.tween_property(weapon_root, "rotation_degrees:x", 0.0, 0.11)
-

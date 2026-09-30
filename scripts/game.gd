@@ -27,6 +27,39 @@ var stage_panel: Control
 var difficulty_button: Button
 var difficulty_index := 1
 var checkpoint_position := Vector3(0, 1.1, -10)
+var side_view := false
+
+func set_side_view(enabled: bool) -> void:
+    side_view = enabled
+    var actors: Array = [player]
+    for group in ["enemies", "hazards", "projectiles", "moving_platforms"]:
+        actors.append_array(get_tree().get_nodes_in_group(group))
+    for actor: Node3D in actors:
+        if not is_instance_valid(actor) or not is_ancestor_of(actor):
+            continue
+        if enabled:
+            actor.set_meta("free_view_x", actor.position.x)
+            actor.position.x = 0.0
+            if actor is CharacterBody3D:
+                actor.velocity.x = 0.0
+                _raise_to_safe_center(actor)
+        elif actor.has_meta("free_view_x"):
+            actor.position.x = float(actor.get_meta("free_view_x"))
+            actor.remove_meta("free_view_x")
+            if actor is CharacterBody3D:
+                actor.velocity.x = 0.0
+                _raise_to_safe_center(actor)
+
+func _raise_to_safe_center(actor: CharacterBody3D) -> void:
+    var query := PhysicsRayQueryParameters3D.create(actor.global_position + Vector3.UP * 8.0, actor.global_position - Vector3.UP * 2.0)
+    var excluded: Array[RID] = [player.get_rid()]
+    for enemy: CharacterBody3D in get_tree().get_nodes_in_group("enemies"):
+        excluded.append(enemy.get_rid())
+    query.exclude = excluded
+    var hit := get_world_3d().direct_space_state.intersect_ray(query)
+    if not hit.is_empty():
+        actor.global_position.y = maxf(actor.global_position.y, float(hit.position.y) + 0.92)
+        actor.velocity.y = maxf(actor.velocity.y, 0.0)
 
 func _ready() -> void:
     $UI.process_mode = Node.PROCESS_MODE_ALWAYS
@@ -453,6 +486,8 @@ func _bind_touch_buttons() -> void:
         button.button_up.connect(func(): player.set_touch_action(action, false))
 
 func _setup_environment() -> void:
+    # Render 3D at 75% resolution; touch UI retains the native viewport size.
+    get_viewport().scaling_3d_scale = 0.75
     var env := Environment.new()
     env.background_mode = Environment.BG_SKY
     var sky := Sky.new()
@@ -510,11 +545,4 @@ func _boundary(node_name: String, center: Vector3, dimensions: Vector3, stone: M
     shape.size = dimensions
     collision.shape = shape
     body.add_child(collision)
-    # Low visible masonry; the tall collision prevents jumping outside.
-    var railing := MeshInstance3D.new()
-    var mesh := BoxMesh.new()
-    mesh.size = Vector3(dimensions.x, 1.0, dimensions.z)
-    railing.mesh = mesh
-    railing.material_override = stone
-    railing.position.y = -4.75
-    body.add_child(railing)
+    # Invisible collision keeps the scenery outside the traversable corridor.

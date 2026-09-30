@@ -15,6 +15,26 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
+      - name: Optimize courtyard runtime
+        shell: bash
+        run: |
+          if ! python3 tools/verify_courtyard_runtime.py; then
+            curl --fail --location --retry 3 https://download.blender.org/release/Blender4.5/blender-4.5.3-linux-x64.tar.xz -o /tmp/blender.tar.xz
+            tar -xf /tmp/blender.tar.xz -C /tmp
+            /tmp/blender-4.5.3-linux-x64/blender --background --python tools/blender/optimize_courtyard.py
+            test -f art/source/world/runtime_optimization.json
+          fi
+
+      - name: Upload optimized courtyard
+        uses: actions/upload-artifact@v4
+        with:
+          name: optimized-courtyard-runtime
+          path: |
+            assets/models/courtyard_environment.gltf
+            assets/models/courtyard_environment_part*.bin
+            art/source/world/runtime_optimization.json
+          if-no-files-found: error
+
       - name: Setup Android SDK
         uses: android-actions/setup-android@v4
 
@@ -109,8 +129,8 @@ jobs:
         shell: bash
         run: |
           GODOT="$(find "$HOME/.local/share/godot/godot_executable" -maxdepth 1 -type f -name 'Godot*_linux.x86_64' -print -quit)"
-          for TEST in knight_model_smoke world_art_smoke; do
-            timeout 60s "$GODOT" --headless --audio-driver Dummy --path . --script "res://tests/$TEST.gd" --quit-after 180 2>&1 | tee "$TEST.log"
+          for TEST in knight_model_smoke world_art_smoke side_view_smoke; do
+            timeout 120s "$GODOT" --headless --audio-driver Dummy --path . --script "res://tests/$TEST.gd" --quit-after 1800 2>&1 | tee "$TEST.log"
             if grep -E 'SCRIPT ERROR|ERROR:' "$TEST.log"; then exit 1; fi
             grep -q '_SMOKE_OK' "$TEST.log"
           done
@@ -129,6 +149,7 @@ jobs:
         run: |
           GODOT="$(find "$HOME/.local/share/godot/godot_executable" -maxdepth 1 -type f -name 'Godot*_linux.x86_64' -print -quit)"
           timeout 90s xvfb-run -a "$GODOT" --path . --rendering-method gl_compatibility --audio-driver Dummy --script res://tests/preview_capture.gd 2>&1 | tee preview.log
+          timeout 90s xvfb-run -a "$GODOT" --path . --rendering-method gl_compatibility --audio-driver Dummy --script res://tests/feedback_preview.gd 2>&1 | tee -a preview.log
           if grep -E 'SCRIPT ERROR|ERROR:' preview.log; then
             exit 1
           fi
@@ -152,6 +173,7 @@ jobs:
             stage-smoke.log
             knight_model_smoke.log
             world_art_smoke.log
+            side_view_smoke.log
             preview.log
           if-no-files-found: warn
           retention-days: 14

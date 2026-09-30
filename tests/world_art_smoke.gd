@@ -11,11 +11,19 @@ func _verify() -> void:
     assert(yard.find_child("PavementBatch0", true, false) != null)
     var mesh = yard.find_child("PavementBatch0", true, false) as MeshInstance3D
     assert((mesh.get_active_material(0) as StandardMaterial3D).albedo_texture != null, "Prior GitHub stone texture lost")
-    var decoration = yard.find_child("SceneryRuntime", true, false) as MeshInstance3D
-    assert(decoration.mesh.get_surface_count() < 24, "Duplicate materials cause excess draw surfaces")
+    var decorations := yard.find_children("SceneryRuntime*", "MeshInstance3D", true, false)
+    assert(decorations.size()>1, "Courtyard must be spatially chunked")
+    var triangles := 0
+    for decoration: MeshInstance3D in decorations:
+        assert(decoration.mesh.get_surface_count() < 24, "Duplicate materials cause excess draw surfaces")
+        for surface in range(decoration.mesh.get_surface_count()):
+            var arrays := decoration.mesh.surface_get_arrays(surface)
+            triangles += arrays[Mesh.ARRAY_INDEX].size()/3 if arrays[Mesh.ARRAY_INDEX]!=null else arrays[Mesh.ARRAY_VERTEX].size()/3
+    assert(triangles < 80000, "Courtyard runtime is still too heavy")
     assert(stage.get_node_or_null("FortressGateVisual") != null)
     assert(stage.get_node("CourtyardHurdle0").get_node_or_null("Stage1BarricadeVisual") != null)
     assert(stage.get_node("Player").model_animation != null)
+    assert(stage.get_node("LandscapeShelf").material_override.albedo_texture != null)
     for enemy in get_nodes_in_group("enemies"):
         assert(enemy.visual_root.find_child("EnemyRig", true, false) != null, "Prior defender model lost")
     stage.queue_free()
@@ -27,6 +35,7 @@ func _verify() -> void:
         assert(stage.get_meta("uses_blender_scenery",false), "Missing biome decoration")
         assert(stage.get_node_or_null("FortressGateVisual") != null)
         assert(stage.find_child("World_*",true,false) != null)
+        assert(stage.get_node("LandscapeShelf").material_override.albedo_texture != null, "Outside ground needs a texture on every stage")
         stage.queue_free()
         await process_frame
     print("WORLD_ART_SMOKE_OK: textured courtyard, batched decoration, walls, props, five defenders and all ten biomes")

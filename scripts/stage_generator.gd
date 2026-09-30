@@ -280,6 +280,8 @@ static func _scenery(game: Node3D, number: int, recipe: Dictionary, stone: Mater
             if yard:
                 yard.name = "CourtyardEnvironmentVisual"
                 game.add_child(yard)
+                WorldScenery.configure_yard(yard)
+                WorldScenery.add_landscape(game, number, width(number))
         # Reusable Blender props remain outside the combat route.
         var placements := [
             ["stage1_barrel", -11.55, -7.0],

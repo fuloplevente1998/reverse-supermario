@@ -21,6 +21,10 @@ func _ready() -> void:
     add_child(visual)
 
 func _physics_process(delta: float) -> void:
+    if get_parent().get("side_view") == true:
+        position.x = 0.0
+        direction.x = 0.0
+        direction = direction.normalized()
     lifetime -= delta
     if lifetime <= 0.0:
         queue_free()

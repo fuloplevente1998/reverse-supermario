@@ -13,6 +13,8 @@ func _ready() -> void:
 
 func toggle_view() -> void:
     side_view = not side_view
+    target.get_parent().call("set_side_view", side_view)
+    global_position = target.global_position
     _place_camera()
 
 func _process(delta: float) -> void:
@@ -20,7 +22,9 @@ func _process(delta: float) -> void:
     camera.look_at(global_position + Vector3(0, 0.65, 0))
 
 func _place_camera() -> void:
-    camera.position = Vector3(-11, 3.5, 0) if side_view else Vector3(-0.6, 2.45, -5.55)
+    camera.projection = Camera3D.PROJECTION_ORTHOGONAL if side_view else Camera3D.PROJECTION_PERSPECTIVE
+    camera.size = 14.0
+    camera.position = Vector3(-14, 0.65, 0) if side_view else Vector3(-0.6, 2.45, -5.55)
     camera.fov = 58.0 if side_view else 60.0
     camera.look_at(global_position + Vector3(0, 0.65, 0))
 

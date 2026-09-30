@@ -68,6 +68,12 @@ func _physics_process(delta: float) -> void:
     var input_vec := touch_axis if touch_axis.length_squared() > 0.01 else (touch_vec if touch_vec.length_squared() > 0.01 else keyboard_vec)
     if input_vec.length() > 1.0:
         input_vec = input_vec.normalized()
+    var on_center_line: bool = bool(camera_pivot.get("side_view"))
+    if on_center_line:
+        # Screen left/right controls only forward/back along the stage's Z axis.
+        input_vec = Vector2(input_vec.x, 0.0)
+        position.x = 0.0
+        velocity.x = 0.0
 
     blocking = Input.is_action_pressed("block") or touch_block
 
@@ -75,7 +81,7 @@ func _physics_process(delta: float) -> void:
         var basis_y := Basis(Vector3.UP, camera_yaw)
         var direction := (basis_y * Vector3(-input_vec.x, 0.0, input_vec.y)).normalized()
         if camera_pivot.get("side_view"):
-            direction = Vector3(-input_vec.y, 0.0, -input_vec.x).normalized()
+            direction = Vector3(0.0, 0.0, input_vec.x).normalized()
         var speed := move_speed
         speed *= input_vec.length()
         if blocking:
@@ -98,6 +104,9 @@ func _physics_process(delta: float) -> void:
         attack()
 
     move_and_slide()
+    if on_center_line:
+        position.x = 0.0
+        velocity.x = 0.0
     _update_model_animation(delta)
     for i in range(legs.size()):
         var stride := sin(Time.get_ticks_msec() * 0.016 + i * PI) * 0.45

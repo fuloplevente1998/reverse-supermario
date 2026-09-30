@@ -50,6 +50,8 @@ func _physics_process(delta: float) -> void:
     if kind == "saw":
         position.x = origin.x + sin(elapsed * TAU / period + phase) * travel
         visual.rotation.y += delta * 7.0
+    if get_parent().get("side_view") == true:
+        position.x = 0.0
     if active and hit_delay <= 0.0:
         for body in get_overlapping_bodies():
             if body.is_in_group("player") and not bool(body.get("dead")):

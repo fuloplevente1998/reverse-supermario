@@ -11,7 +11,7 @@ func _input(event: InputEvent) -> void:
             _release_pointer()
             get_viewport().set_input_as_handled()
         elif event.pressed and pointer == -1 and is_visible_in_tree() and not disabled:
-            var local := get_global_transform_with_canvas().affine_inverse() * event.position
+            var local: Vector2 = get_global_transform_with_canvas().affine_inverse() * event.position
             if local.distance_to(size*0.5) <= minf(size.x,size.y)*0.5:
                 pointer = event.index
                 set_pressed_no_signal(true)

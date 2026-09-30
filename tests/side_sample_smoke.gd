@@ -10,6 +10,9 @@ func _verify() -> void:
     var sample = stage.get_node("SideArtSample")
     assert(sample.get_meta("sample_end_z")-sample.get_meta("sample_start_z")==25.0)
     assert(sample.get_node("ReliefMasonry") is MultiMeshInstance3D)
+    var terrain = stage.get_node("SideTerrain0").get_child(1)
+    var normals: PackedVector3Array = terrain.mesh.surface_get_arrays(0)[Mesh.ARRAY_NORMAL]
+    assert(normals[0].x < -0.99 and normals[12].y > 0.99,"Terrain normals must point toward camera and sky")
     assert(sample.get_node("WalkwayPaving").multimesh.instance_count==68)
     var guard = stage.get_node("Guard_8")
     assert(guard.get_meta("detailed_side_guard",false))

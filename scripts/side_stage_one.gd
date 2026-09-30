@@ -92,9 +92,9 @@ static func _terrain(game: Node3D, segment: Array, index: int, stone: Material, 
     body.add_child(collision)
     var mesh := SurfaceTool.new()
     mesh.begin(Mesh.PRIMITIVE_TRIANGLES)
-    # Outward wound prism, including continuous sloping walkable top.
+    # Godot uses clockwise fronts; keep generated normals outward, including slopes.
     for face in [[0,4,6,2],[1,3,7,5],[2,6,7,3],[0,1,5,4],[0,2,3,1],[4,5,7,6]]:
-        for k in [0,1,2,0,2,3]:
+        for k in [0,2,1,0,3,2]:
             mesh.add_vertex(vertices[face[k]])
     mesh.generate_normals()
     var visual := MeshInstance3D.new()

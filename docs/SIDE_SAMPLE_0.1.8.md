@@ -13,6 +13,7 @@ A 0.1.7 sikeres CI tényleges képein a problémák reprodukálhatók:
 - A KnightRuntime részletes, animált modell betöltődik; profilból nagyon keskeny.
 - Az enemy_guard GLB valóban betöltődik, eredeti anyagai kékesek, de egyszerű doboz/gömb geometriájúak.
 - A főhős és talaj fényerőben elmarad az unshaded háttértől.
+- A terepháló fordított háromszög-sorrendje befelé mutató normálokat generált; a Godot SurfaceTool/Plane forrása alapján javítva. A teszt közvetlenül ellenőrzi a normálok irányát.
 - A talajoldal ugyanazt a triplanáris térkőtextúrát használja, mint a burkolat.
 - A ProgressBar a témára hagyatkozik; saját piros fill és keret nincs.
 - A projektben nincs expand stretch aspect: a mobilkép oldalsávjával összhangban a keep alapérték szerepel.

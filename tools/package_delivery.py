@@ -48,7 +48,23 @@ for name in [
 ]:
     shutil.copyfile(root / "previews" / name, out / name)
 
-if release_version == "0.1.9":
+if release_version == "0.2.0":
+    notes = (
+        "# 0.2.0 – generátor-alapú hosszú Várudvar\n\n"
+        "Az első pálya már az új Godot generator rebuild runtime-ot használja. "
+        "A Várudvar nehézségtől és seedtől függően 700–800 méter közötti, "
+        "mockup-alapú signature szegmensekkel, checkpointokkal, valós résekkel, "
+        "difficulty-aware geometriával és szabályvezérelt szegmenssorrenddel.\n\n"
+        "A generátor kötelező recovery szabályokat alkalmaz gap, bridge, hazard, "
+        "checkpoint és nagy combat szakaszok körül. Easy/Normal/Hard eltérő "
+        "geometriát és encounter-sűrűséget is kaphat, miközben a Várudvar biome "
+        "és fő landmarkjai közösek maradnak.\n\n"
+        "A 0.1.9 referencia-art nyitószakasz, karakter, harc, HUD és mobil vezérlés "
+        "megmaradt. A hosszú pálya további szegmenseinek végleges PackedScene/GLB "
+        "grafikai kidolgozása következő art pass.\n\n"
+        f"Commit: {os.environ['GITHUB_SHA']}\n"
+    )
+elif release_version == "0.1.9":
     notes = (
         "# 0.1.9 – referencia-közeli oldalnézeti grafikai pass\n\n"
         "Az első pálya oldalnézeti/2.5D grafikai fejlesztésének következő ellenőrizhető buildje. "

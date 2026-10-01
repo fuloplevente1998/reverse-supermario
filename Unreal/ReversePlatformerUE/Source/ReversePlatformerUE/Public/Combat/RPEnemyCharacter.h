@@ -6,6 +6,7 @@
 
 class URPHealthComponent;
 class URPEncounterDirectorComponent;
+class URPMeleeCombatComponent;
 
 UENUM(BlueprintType)
 enum class ERPEnemyArchetype : uint8
@@ -31,6 +32,9 @@ public:
 
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat")
     TObjectPtr<URPHealthComponent> Health;
+
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat")
+    TObjectPtr<URPMeleeCombatComponent> MeleeCombat;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Combat")
     ERPEnemyArchetype Archetype = ERPEnemyArchetype::Guard;

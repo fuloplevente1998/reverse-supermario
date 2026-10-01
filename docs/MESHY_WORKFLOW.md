@@ -1,0 +1,48 @@
+# Meshy – előkészített újratextúrázás
+
+A plugin-keresés nem talált Meshy plugint ebben a munkamenetben. A 0.2.5 kiadás előkészítésekor még nem volt
+Meshy-bejelentkezés vagy API-kulcs; azóta a webes próba az alábbiak szerint lezárult.
+A jelenlegi AI mészkő OpenAI beépített képgenerálásából származik.
+
+Az offline előkészítő `tools/meshy_retexture.py` a meglévő CC0 modellek
+geometriáját, material slotjait és UV-it megtartva önálló GLB-t csomagol.
+Két kezdő modul: kőblokk és fugázott fal. A kiadás melléklete a
+`Meshy-Varudvar-kit.zip`: stone.glb, wall.glb és limestone-reference.png.
+Ezek a Meshy webes AI Texturing felületére is feltölthetők.
+
+API út: Meshy-fiók Developer Platform / API Keys oldala, API-kreditkeretes
+kulcs, majd a kulcs környezeti változóként a fejlesztői futtatókörnyezetben.
+Kulcs nem kerül az APK-ba, repóba vagy kérésfájlba. Előfizetést nem vásárolunk.
+A submit kreditfelhasználással jár; a prepare és kit teljesen offline.
+
+```sh
+python3 tools/meshy_retexture.py prepare --asset stone --out-dir /tmp/meshy-stone
+# A MESHY_API_KEY környezeti változó biztonságos beállítása után:
+python3 tools/meshy_retexture.py submit --request /tmp/meshy-stone/stone-request.json --task-file /tmp/meshy-stone/task.json
+python3 tools/meshy_retexture.py status --task-id TASK_ID
+python3 tools/meshy_retexture.py download --task-id TASK_ID --out-dir /tmp/meshy-stone/result
+```
+
+A request meshy-6, 2k, PBR, eredeti UV-megtartás, lighting removal és GLB
+kimenetet kér. Az API fő végpontja `POST /openapi/v1/retexture`.
+A generálás nincs a játékba beépítve; fejlesztéskor készített modelleket kap.
+Letöltés után ellenőrizni kell a fugákat, UV-varratokat és material slotokat;
+mobilra méretezés, collision-egyezés és Godot-képellenőrzés után válhat
+az assetkit új forrásává. A script nem cserél automatikusan játékbeli modelleket.
+
+Hivatalos dokumentáció, ellenőrizve 2026-10-01:
+- https://docs.meshy.ai/en/api/authentication
+- https://docs.meshy.ai/en/api/retexture
+- https://docs.meshy.ai/en/webapp/guides/3d-model/ai-texturing
+
+## Webes próba – 2026-10-01
+
+Google-belépés után a `Courtyard Limestone Stone v1` kőelemet az eredeti UV-val importáltuk.
+A Meshy 7 Image Input újratextúrázás a saját mészkőreferenciával, 2K és PBR beállítással
+elkészült. 10 ingyenes kredit fogyott, 90 maradt. A felület 108 háromszöget és 82 csúcsot
+jelez az eredeti és az új változatra is. A GLB letöltés fizetős előfizetéshez kötött,
+ezért nem töltöttünk le Meshy assetet és a 0.2.5 APK-ban nincs Meshy eredmény.
+
+**Felhasználói keret: nulla költés.** Előfizetést nem indítunk, kreditet nem vásárolunk.
+A játék a meglévő CC0 modellek és a korábban elkészített AI textúrák felhasználásával készül.
+A webes próba a Meshy munkatérben marad; API-kulcs továbbra sincs konfigurálva.

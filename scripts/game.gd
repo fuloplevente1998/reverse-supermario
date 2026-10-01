@@ -3,6 +3,7 @@ extends Node3D
 @export_range(1, 10) var stage_number := 1
 const StageTwo = preload("res://scripts/stage_two.gd")
 const StageGenerator = preload("res://scripts/stage_generator.gd")
+const DifficultyProfiles = preload("res://scripts/generation/difficulty_profiles.gd")
 const SAVE_PATH := "user://reverse_platformer_progress.cfg"
 
 @onready var player = $Player
@@ -34,6 +35,9 @@ func set_side_view(enabled: bool) -> void:
         return
     side_view = enabled
     if stage_number == 1:
+        if not enabled: StageGenerator.ensure_free_view_scenery(self)
+        for scenery in get_tree().get_nodes_in_group("free_view_scenery"):
+            if is_ancestor_of(scenery): scenery.visible = not enabled
         var env: Environment = $WorldEnvironment.environment
         # Reference pass: stronger warm key and restrained cool fill restore
         # shape to armor/stone instead of flattening the foreground.
@@ -73,6 +77,7 @@ func _raise_to_safe_center(actor: CharacterBody3D) -> void:
         actor.velocity.y = maxf(actor.velocity.y, 0.0)
 
 func _ready() -> void:
+    var build_started := Time.get_ticks_msec()
     $UI.process_mode = Node.PROCESS_MODE_ALWAYS
     _load_difficulty()
     _setup_environment()
@@ -85,6 +90,31 @@ func _ready() -> void:
     _on_hp_changed(player.hp)
     if stage_number == 1:
         $Player/CameraPivot.set_view(true)
+    set_meta("stage_build_ms", Time.get_ticks_msec() - build_started)
+    if get_tree().get_meta("warm_enter", false):
+        get_tree().remove_meta("warm_enter")
+        call_deferred("_warm_start")
+
+func _warm_start() -> void:
+    # Render the actual opening before accepting play input. The UI stays live.
+    var previous_mode := process_mode
+    process_mode = Node.PROCESS_MODE_DISABLED
+    var cover := ColorRect.new()
+    cover.name = "StartupCover"
+    cover.color = Color("#142639")
+    cover.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+    $UI.add_child(cover)
+    var label := Label.new()
+    label.text = "PÁLYA BETÖLTÉSE…"
+    label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+    label.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+    cover.add_child(label)
+    for frame in range(8): await get_tree().process_frame
+    await get_tree().create_timer(0.35, true).timeout
+    process_mode = previous_mode
+    cover.queue_free()
+    set_meta("startup_ready", true)
 
 func _physics_process(_delta: float) -> void:
     if not ended and player.global_position.y < -6.0:
@@ -110,10 +140,13 @@ func _recover_water() -> void:
 func _on_checkpoint_entered(body: Node3D, spawn: Vector3 = Vector3(0, 1.1, 16.0)) -> void:
     if body == player and not ended and spawn.z > checkpoint_position.z:
         checkpoint_position = spawn
+        if bool(get_meta("generator_rebuild", false)):
+            var profile: Dictionary = DifficultyProfiles.get_profile(difficulty_index)
+            player.heal(roundi(20.0 * float(profile["healing_multiplier"])))
         _pulse_status("ELLENŐRZŐPONT AKTÍV")
 
 func side_ground_height(z: float) -> float:
-    return StageGenerator.ground_height(stage_number, z)
+    return StageGenerator.ground_height(stage_number, z, difficulty_index)
 
 func _connect_gameplay() -> void:
     player.hp_changed.connect(_on_hp_changed)
@@ -173,7 +206,7 @@ func _style_interface() -> void:
     $UI/HealthPanel.add_child(hp_text)
 
     objective_label = Label.new()
-    objective_label.text = "%d. PÁLYA: %s — ÉRD EL A KAPUT" % [stage_number, StageGenerator.title(stage_number)]
+    objective_label.text = "%d. PÁLYA: %s — %s" % [stage_number, StageGenerator.title(stage_number), StageGenerator.goal(stage_number)]
     objective_label.position = Vector2(24, 78)
     objective_label.add_theme_font_size_override("font_size", 16)
     $UI.add_child(objective_label)
@@ -424,19 +457,16 @@ func _load_difficulty() -> void:
     difficulty_index = clampi(int(progress.get_value("progress", "difficulty", 1)), 0, 2)
 
 func _apply_difficulty() -> void:
-    var player_health := [120, 100, 80]
-    var enemy_health := [0.75, 1.0, 1.3]
-    var enemy_damage := [0.7, 1.0, 1.4]
-    player.max_hp = player_health[difficulty_index]
+    var profile: Dictionary = DifficultyProfiles.get_profile(difficulty_index)
+    player.max_hp = int(profile["player_health"])
     player.hp = player.max_hp
     for enemy in get_tree().get_nodes_in_group("enemies"):
-        enemy.max_hp = maxi(1, roundi(enemy.max_hp * enemy_health[difficulty_index]))
-        enemy.hp = enemy.max_hp
-        enemy.damage = maxi(1, roundi(enemy.damage * enemy_damage[difficulty_index]))
-        enemy.move_speed *= [0.85, 1.0, 1.12][difficulty_index]
+        if is_ancestor_of(enemy):
+            enemy.apply_difficulty(profile)
 
 func _hazard_damage(amount: int) -> int:
-    return maxi(1, roundi(amount * [0.75, 1.0, 1.3][difficulty_index]))
+    var profile: Dictionary = DifficultyProfiles.get_profile(difficulty_index)
+    return maxi(1, roundi(amount * float(profile["hazard_damage_multiplier"])))
 
 func _build_stage_panel() -> void:
     stage_panel = Control.new()
@@ -624,7 +654,7 @@ func _build_boundaries() -> void:
     var stone := StandardMaterial3D.new()
     stone.albedo_color = Color(0.49, 0.57, 0.6)
     stone.roughness = 0.92
-    var end_z := StageGenerator.end_z(stage_number)
+    var end_z := StageGenerator.end_z(stage_number, difficulty_index)
     var center_z := (end_z - 15.0) * 0.5
     _boundary("BoundaryWest", Vector3(-half_width, 5, center_z), Vector3(0.5, 12, end_z + 15), stone)
     _boundary("BoundaryEast", Vector3(half_width, 5, center_z), Vector3(0.5, 12, end_z + 15), stone)

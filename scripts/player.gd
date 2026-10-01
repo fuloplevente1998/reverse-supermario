@@ -154,6 +154,12 @@ func attack() -> void:
     await get_tree().create_timer(attack_cooldown).timeout
     attack_ready = true
 
+func heal(amount: int) -> void:
+    if dead or amount <= 0:
+        return
+    hp = mini(max_hp, hp + amount)
+    hp_changed.emit(hp)
+
 func take_damage(amount: int) -> void:
     if dead:
         return

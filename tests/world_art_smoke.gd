@@ -7,6 +7,8 @@ func _verify() -> void:
     var stage = load("res://scenes/main.tscn").instantiate()
     root.add_child(stage)
     await process_frame
+    assert(stage.get_node_or_null("CourtyardEnvironmentVisual") == null, "Side-view startup loaded unused legacy yard")
+    stage.player.camera_pivot.set_view(false)
     var yard = stage.get_node("CourtyardEnvironmentVisual")
     assert(yard.find_child("PavementBatch0", true, false) != null)
     var mesh = yard.find_child("PavementBatch0", true, false) as MeshInstance3D
@@ -21,8 +23,10 @@ func _verify() -> void:
             triangles += arrays[Mesh.ARRAY_INDEX].size()/3 if arrays[Mesh.ARRAY_INDEX]!=null else arrays[Mesh.ARRAY_VERTEX].size()/3
     assert(triangles < 80000, "Courtyard runtime is still too heavy")
     assert(stage.get_node_or_null("FortressGateVisual") != null)
-    assert(stage.get_node("CourtyardHurdle0") is StaticBody3D)
+    assert(stage.get_node("GeneratedLongStage").get_child(0).get_node("Floor") is StaticBody3D, "Generated opening lost its physical floor")
     assert(stage.get_node_or_null("SideBackdrop") != null)
+    stage.player.camera_pivot.set_view(true)
+    assert(not yard.visible, "Unused 3D yard still casts shadows in side view")
     assert(stage.get_node("Player/CameraPivot").camera.cull_mask == 5)
     assert(stage.get_node("Player").model_animation != null)
     assert(stage.get_node("LandscapeShelf").material_override.albedo_texture != null)

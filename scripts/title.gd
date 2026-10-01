@@ -7,6 +7,7 @@ var difficulty_index := 1
 var unlocked_stage := 1
 var stage_panel: Control
 var difficulty_button: Button
+var loading := false
 
 func _ready() -> void:
     var progress := ConfigFile.new()
@@ -111,7 +112,33 @@ func _start() -> void:
     _open_stage(unlocked_stage)
 
 func _open_stage(number: int) -> void:
-    if number < 1 or number > unlocked_stage:
+    if loading or number < 1 or number > unlocked_stage:
         return
+    loading = true
+    var cover := ColorRect.new()
+    cover.color = Color("#142639")
+    cover.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+    add_child(cover)
+    var label := Label.new()
+    label.text = "PÁLYA BETÖLTÉSE…"
+    label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+    label.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+    cover.add_child(label)
+    await get_tree().process_frame
+    if DisplayServer.get_name() != "headless": await RenderingServer.frame_post_draw
     var path := "res://scenes/main.tscn" if number == 1 else "res://scenes/stage%d.tscn" % number
-    get_tree().call_deferred("change_scene_to_file", path)
+    var error := ResourceLoader.load_threaded_request(path)
+    if error != OK:
+        cover.queue_free()
+        loading = false
+        return
+    while ResourceLoader.load_threaded_get_status(path) == ResourceLoader.THREAD_LOAD_IN_PROGRESS:
+        await get_tree().process_frame
+    if ResourceLoader.load_threaded_get_status(path) != ResourceLoader.THREAD_LOAD_LOADED:
+        cover.queue_free()
+        loading = false
+        return
+    var packed := ResourceLoader.load_threaded_get(path) as PackedScene
+    get_tree().set_meta("warm_enter", DisplayServer.get_name() != "headless")
+    get_tree().call_deferred("change_scene_to_packed", packed)

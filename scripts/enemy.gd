@@ -26,13 +26,32 @@ var body_mesh: MeshInstance3D
 var weapon_root: Node3D
 var detail_animation: AnimationPlayer
 var detail_attack_time := 0.0
+var elite_health_multiplier := 1.0
+var elite_damage_multiplier := 1.0
+var encounter_health_scale := -1.0
+var encounter_damage_scale := -1.0
+var base_max_hp := 60
+var base_damage := 12
+var base_move_speed := 3.4
 
 func _ready() -> void:
     _configure_archetype()
+    base_max_hp = max_hp
+    base_damage = damage
+    base_move_speed = move_speed
     hp = max_hp
     add_to_group("enemies")
     player = get_tree().get_first_node_in_group("player") as CharacterBody3D
     _build_visual()
+
+func apply_difficulty(profile: Dictionary) -> void:
+    # Apply from archetype baselines, so repeated setup never stacks multipliers.
+    var health_scale: float = encounter_health_scale if encounter_health_scale >= 0.0 else float(profile["enemy_health_multiplier"]) * elite_health_multiplier
+    var damage_scale: float = encounter_damage_scale if encounter_damage_scale >= 0.0 else float(profile["enemy_damage_multiplier"]) * elite_damage_multiplier
+    max_hp = maxi(1, roundi(base_max_hp * health_scale))
+    hp = max_hp
+    damage = maxi(1, roundi(base_damage * damage_scale))
+    move_speed = base_move_speed * float(profile["enemy_move_multiplier"])
 
 func _physics_process(delta: float) -> void:
     if dead:

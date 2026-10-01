@@ -8,6 +8,7 @@ class UCameraComponent;
 class USpringArmComponent;
 class URPCameraModeComponent;
 class URPHealthComponent;
+class URPMeleeCombatComponent;
 
 UCLASS()
 class REVERSEPLATFORMERUE_API ARPPlayerCharacter : public ACharacter
@@ -32,6 +33,9 @@ public:
 
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat")
     TObjectPtr<URPHealthComponent> Health;
+
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat")
+    TObjectPtr<URPMeleeCombatComponent> MeleeCombat;
 
     UPROPERTY(BlueprintReadOnly, Category="Combat")
     bool bBlocking = false;

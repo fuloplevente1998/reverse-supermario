@@ -10,17 +10,17 @@ static func build(game: Node3D) -> void:
     root.set_meta("sample_end_z", 10.0)
     root.set_meta("reference_pass", "2026-10-01")
 
-    var limestone := Art.material(Color("#d7c29e"))
+    var limestone := Art.material(Color("#cdb48d"))
     limestone.albedo_texture = preload("res://assets/terrain/sample_limestone.svg")
     limestone.roughness = 0.82
     limestone.vertex_color_use_as_albedo = true
 
-    var darker_limestone := Art.material(Color("#9f8c73"))
+    var darker_limestone := Art.material(Color("#8f7c63"))
     darker_limestone.albedo_texture = preload("res://assets/terrain/sample_limestone.svg")
     darker_limestone.roughness = 0.92
     darker_limestone.vertex_color_use_as_albedo = true
 
-    var mortar := Art.material(Color("#554d43"))
+    var mortar := Art.material(Color("#6a5c4b"))
     mortar.roughness = 1.0
 
     # A recessed warm-grey backing is visible in the joints so the wall reads as
@@ -44,7 +44,7 @@ static func build(game: Node3D) -> void:
                 var y: float = -0.36 - row * 0.58 + (0.018 if (row + index) % 3 == 0 else -0.010)
                 var face_offset := 0.028 if (row + index) % 4 == 0 else (-0.018 if (row + index) % 5 == 0 else 0.0)
                 var transform := Transform3D(
-                    Basis.IDENTITY.scaled(Vector3(0.30, 0.51, b - a - 0.045)),
+                    Basis.IDENTITY.scaled(Vector3(0.25, 0.48, b - a - 0.055)),
                     Vector3(-2.70 + face_offset, y, (a + b) * 0.5)
                 )
                 if row == 4:
@@ -98,30 +98,82 @@ static func build(game: Node3D) -> void:
     game.set_meta("side_reference_layers", 3)
 
 static func _build_middle_distance(game: Node3D) -> void:
-    var left_wall := WorldScenery.place(game, "castle_wall", Vector3(9.0, 0.0, -10.5), Vector3(0.68, 0.78, 0.68), PI * 0.5)
-    if left_wall:
-        left_wall.name = "Sample_CastleWall_Left"
-        WorldScenery.set_render_layer(left_wall, 4)
-        _set_shadows(left_wall, true)
+    # Screenshot-driven pass: remove the old grey cone-roof gate/towers from
+    # the opening scene. A warm limestone arcade with battlements matches the
+    # painted courtyard much more closely and keeps the silhouette medieval.
+    var root := Node3D.new()
+    root.name = "Sample_CastleArchitecture"
+    game.add_child(root)
 
-    var right_wall := WorldScenery.place(game, "castle_wall", Vector3(9.0, 0.0, 8.0), Vector3(0.68, 0.78, 0.68), PI * 0.5)
-    if right_wall:
-        right_wall.name = "Sample_CastleWall_Right"
-        WorldScenery.set_render_layer(right_wall, 4)
-        _set_shadows(right_wall, true)
+    var stone := Art.material(Color("#c8ae82"))
+    stone.roughness = 0.90
+    var light_stone := Art.material(Color("#e3cfaa"))
+    light_stone.roughness = 0.88
+    var shadow_stone := Art.material(Color("#8d785e"))
+    shadow_stone.roughness = 0.96
+    var deep := Art.material(Color("#2d2a27"))
+    deep.roughness = 1.0
+    var red := Art.material(Color("#8e2940"))
+    red.roughness = 0.88
+    var gold := Art.material(Color("#b9873e"), 0.42)
+    gold.roughness = 0.48
 
-    var gate := WorldScenery.place(game, "fortress_gate", Vector3(10.2, 0.0, -0.5), Vector3.ONE * 0.40, PI * 0.5)
-    if gate:
-        gate.name = "Sample_CastleGate"
-        WorldScenery.set_render_layer(gate, 4)
-        _set_shadows(gate, true)
+    # Recessed wall mass: visible architecture, not a second gameplay floor.
+    var wall := Art.box(root, Vector3(0.48, 4.2, 19.0), Vector3(6.8, 2.05, -1.0), stone)
+    wall.name = "CourtyardWall"
+    var wall_shadow := Art.box(root, Vector3(0.12, 3.35, 18.2), Vector3(6.52, 1.72, -1.0), shadow_stone)
+    wall_shadow.name = "WallRecess"
 
-    for item in [["stage1_banner", -11.7], ["stage1_banner", 8.6]]:
-        var banner := WorldScenery.place(game, item[0], Vector3(4.7, 0.0, item[1]), Vector3.ONE * 0.92, PI * 0.5)
-        if banner:
-            banner.name = "Sample_%s_%s" % [str(item[0]), str(item[1])]
-            WorldScenery.set_render_layer(banner, 4)
-            _set_shadows(banner, true)
+    # Central open arch built from real blocks in the Y/Z plane.
+    var arch := Node3D.new()
+    arch.name = "Sample_CastleGate"
+    root.add_child(arch)
+    var gate_center_z := -0.4
+    var gate_half := 2.0
+    var gate_top := 4.55
+    Art.box(arch, Vector3(0.70, 3.7, 1.12), Vector3(6.28, 1.85, gate_center_z-gate_half-0.52), light_stone)
+    Art.box(arch, Vector3(0.70, 3.7, 1.12), Vector3(6.28, 1.85, gate_center_z+gate_half+0.52), light_stone)
+    var opening := Art.box(arch, Vector3(0.10, 3.55, 3.95), Vector3(6.44, 1.72, gate_center_z), deep)
+    opening.name = "GateRecess"
+    for i in range(11):
+        var angle := PI * float(i) / 10.0
+        var z := gate_center_z + cos(angle) * 2.35
+        var y := 3.28 + sin(angle) * 1.52
+        var voussoir := Art.box(arch, Vector3(0.76, 0.55, 0.62), Vector3(6.20, y, z), light_stone if i % 2 else stone)
+        voussoir.rotation.x = angle - PI * 0.5
+    var keystone := Art.box(arch, Vector3(0.82, 0.72, 0.52), Vector3(6.14, gate_top, gate_center_z), gold)
+    keystone.rotation.x = 0.0
+
+    # Square battlement towers replace the toy-like silver cone roofs.
+    for item in [[-7.0, "Left"], [6.2, "Right"]]:
+        var z: float = item[0]
+        var tower := Node3D.new()
+        tower.name = "Sample_CastleTower_" + str(item[1])
+        root.add_child(tower)
+        Art.box(tower, Vector3(0.82, 5.25, 3.0), Vector3(6.45, 2.62, z), stone)
+        Art.box(tower, Vector3(0.92, 0.34, 3.30), Vector3(6.40, 5.12, z), light_stone)
+        Art.box(tower, Vector3(0.94, 0.24, 3.55), Vector3(6.39, 0.22, z), shadow_stone)
+        for level in [1.35, 2.55, 3.75]:
+            Art.box(tower, Vector3(0.12, 0.52, 0.20), Vector3(6.00, level, z), deep)
+        for offset in [-1.18, -0.40, 0.40, 1.18]:
+            Art.box(tower, Vector3(0.92, 0.82, 0.52), Vector3(6.40, 5.58, z+offset), light_stone)
+
+    # Wall crenellations and inset joints break the large flat silhouette.
+    for z in [-9.0, -5.0, 3.8, 8.0]:
+        Art.box(root, Vector3(0.72, 0.62, 0.95), Vector3(6.40, 4.56, z), light_stone)
+    for z in [-9.8, -8.2, -5.8, -4.2, 3.0, 4.6, 7.2, 8.8]:
+        Art.box(root, Vector3(0.10, 2.8, 0.06), Vector3(6.48, 2.05, z), shadow_stone)
+
+    # Long vertical banners with metal finials, visually closer to the target.
+    for z in [-10.7, 10.0]:
+        var pole := Art.cylinder(root, 0.045, 4.2, Vector3(5.65, 2.1, z), gold)
+        pole.name = "BannerPole"
+        Art.box(root, Vector3(0.18, 2.25, 0.92), Vector3(5.58, 2.75, z+0.50), red)
+        Art.box(root, Vector3(0.20, 0.08, 0.96), Vector3(5.55, 3.86, z+0.50), gold)
+        Art.cylinder(root, 0.09, 0.24, Vector3(5.65, 4.26, z), gold)
+
+    WorldScenery.set_render_layer(root, 4)
+    _set_shadows(root, true)
 
 static func _build_props(game: Node3D) -> void:
     for item in [["stage1_barrel", -7.3, 0.96], ["stage1_crate", -5.6, 1.05]]:
@@ -132,14 +184,14 @@ static func _build_props(game: Node3D) -> void:
             _set_shadows(model, true)
 
 static func _build_garden(root: Node3D, game: Node3D) -> void:
-    # Existing Blender pines are stretched into narrow courtyard silhouettes.
-    # They remain deliberately behind the gameplay plane.
-    for z in [-12.5, -2.7, 5.9]:
-        var tree := WorldScenery.place(game, "pine_tree", Vector3(6.0, 0.0, z), Vector3(0.30, 0.92, 0.30))
-        if tree:
-            tree.name = "SampleCypress_%s" % str(z)
-            WorldScenery.set_render_layer(tree, 4)
-            _set_shadows(tree, true)
+    var bark := Art.material(Color("#5a412c"))
+    bark.roughness = 1.0
+    var cypress_dark := Art.material(Color("#23452f"))
+    cypress_dark.roughness = 0.98
+    var cypress_mid := Art.material(Color("#35613b"))
+    cypress_mid.roughness = 0.98
+    for z in [-12.3, -2.9, 6.1]:
+        _cypress(root, Vector3(5.55, 0.0, z), bark, cypress_dark, cypress_mid, "SampleCypress_%s" % str(z))
 
     var leaf := Art.material(Color("#36583a"))
     leaf.roughness = 0.95
@@ -178,6 +230,38 @@ static func _build_garden(root: Node3D, game: Node3D) -> void:
             rock.name = "SampleGardenRock%s" % str(z)
             WorldScenery.set_render_layer(rock, 4)
             _set_shadows(rock, true)
+
+static func _cypress(root: Node3D, at: Vector3, bark: Material, dark: Material, mid: Material, node_name: String) -> void:
+    var tree := Node3D.new()
+    tree.name = node_name
+    tree.position = at
+    root.add_child(tree)
+    Art.cylinder(tree, 0.11, 2.25, Vector3(0.0, 1.12, 0.0), bark)
+    for item in [
+        [0.58, 0.42, 0.78, -0.04],
+        [1.20, 0.50, 0.95, 0.08],
+        [1.92, 0.43, 0.92, -0.06],
+        [2.62, 0.34, 0.74, 0.05],
+        [3.17, 0.24, 0.54, -0.02]
+    ]:
+        var crown := SphereMesh.new()
+        crown.radius = float(item[1])
+        crown.height = float(item[2]) * 2.0
+        crown.radial_segments = 12
+        crown.rings = 8
+        var node := Art.piece(tree, crown, Vector3(float(item[3]), float(item[0]), 0.0), dark if int(float(item[0])*10.0) % 2 == 0 else mid)
+        node.scale = Vector3(0.72, 1.0, 0.88)
+    # A few offset branch masses stop the tree reading like stacked green balls.
+    for item in [[0.20,1.48,-0.06],[-0.18,2.22,0.08],[0.12,2.82,0.02]]:
+        var branch := SphereMesh.new()
+        branch.radius = 0.20
+        branch.height = 0.52
+        branch.radial_segments = 10
+        branch.rings = 6
+        var piece := Art.piece(tree, branch, Vector3(float(item[0]),float(item[1]),float(item[2])), mid)
+        piece.scale = Vector3(0.72,1.0,0.78)
+    WorldScenery.set_render_layer(tree, 4)
+    _set_shadows(tree, true)
 
 static func _brazier(root: Node3D, at: Vector3, node_name: String) -> void:
     var brazier := Node3D.new()

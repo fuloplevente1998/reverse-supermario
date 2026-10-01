@@ -212,7 +212,6 @@ static func _brazier(root: Node3D, at: Vector3, node_name: String) -> void:
     light.light_energy = 0.62
     light.omni_range = 4.0
     light.shadow_enabled = false
-    light.cull_mask = 5
     brazier.add_child(light)
     WorldScenery.set_render_layer(brazier, 4)
 

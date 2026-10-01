@@ -1,0 +1,30 @@
+name: Unreal Migration Static Check
+
+on:
+  push:
+    branches: [ "unreal/mobile-rebuild" ]
+    paths:
+      - "Unreal/ReversePlatformerUE/**"
+      - "docs/CHANGE_TO_UNREAL_ENGINE_MOBILE.md"
+      - "tools/validate_unreal_rebuild.py"
+      - ".github/workflows/unreal-migration-check.yml"
+  pull_request:
+    paths:
+      - "Unreal/ReversePlatformerUE/**"
+      - "docs/CHANGE_TO_UNREAL_ENGINE_MOBILE.md"
+      - "tools/validate_unreal_rebuild.py"
+
+concurrency:
+  group: unreal-migration-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Validate Unreal migration source
+        run: python3 tools/validate_unreal_rebuild.py

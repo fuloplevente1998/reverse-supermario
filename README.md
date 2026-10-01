@@ -1,3 +1,10 @@
+
+## Unreal Engine mobile rebuild
+
+A teljes Android-first Unreal Engine újratervezés a `unreal/mobile-rebuild` ágon indult el. A Godot projekt ezen az ágon történeti referencia és összehasonlítási alap marad; az új implementáció az `Unreal/ReversePlatformerUE/` alatt készül.
+
+Tervezési dokumentum: [docs/CHANGE_TO_UNREAL_ENGINE_MOBILE.md](docs/CHANGE_TO_UNREAL_ENGINE_MOBILE.md).
+
 # Reverse Platformer (working title)
 
 Android action-platformer prototype built with Godot 4 Mobile renderer. Current focus: the first side-scrolling level, expanded to 240 m with hills, valleys and a water ditch. Nine earlier stages, three difficulty settings, touch controls and the 3D preview remain available.

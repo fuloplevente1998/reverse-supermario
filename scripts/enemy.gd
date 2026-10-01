@@ -317,9 +317,7 @@ func _install_sample_guard() -> bool:
     # The original .blend remains the shared editable source, not a mockup.
     var model := preload("res://assets/models/knight_study.glb").instantiate() as Node3D
     model.name = "EnemyRig"
-    model.position.y = -0.9
-    model.scale = Vector3.ONE * 0.9
-    visual_root.add_child(model)
+    model.position.y = -0.96\n    model.scale = Vector3.ONE * 0.96\n    visual_root.add_child(model)
     detail_animation = model.find_child("AnimationPlayer", true, false) as AnimationPlayer
     body_mesh = model.find_child("KnightRuntime", true, false) as MeshInstance3D
     var material := ShaderMaterial.new()

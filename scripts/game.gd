@@ -35,10 +35,12 @@ func set_side_view(enabled: bool) -> void:
     side_view = enabled
     if stage_number == 1:
         var env: Environment = $WorldEnvironment.environment
-        env.ambient_light_energy = 0.65 if enabled else 0.25
-        $Sun.light_energy = 0.95 if enabled else 0.60
+        # Reference pass: stronger warm key and restrained cool fill restore
+        # shape to armor/stone instead of flattening the foreground.
+        env.ambient_light_energy = 0.46 if enabled else 0.25
+        $Sun.light_energy = 1.12 if enabled else 0.60
         if get_node_or_null("CharacterFill"):
-            $CharacterFill.light_energy = 0.65 if enabled else 0.18
+            $CharacterFill.light_energy = 0.36 if enabled else 0.18
         player._update_side_presentation()
     var actors: Array = [player]
     for group in ["enemies", "hazards", "projectiles", "moving_platforms"]:
@@ -599,10 +601,7 @@ func _setup_environment() -> void:
     env.tonemap_mode = Environment.TONE_MAPPER_FILMIC
     env.glow_enabled = false # Mobile: use emissive materials without post-process bloom.
     env.fog_enabled = true
-    env.fog_light_color = Color(0.36, 0.3, 0.3, 1)
-    env.fog_light_energy = 0.55
-    env.fog_density = 0.0015
-    env.fog_height = 0.0
+    env.fog_light_color = Color(0.46, 0.40, 0.34, 1)\n    env.fog_light_energy = 0.42\n    env.fog_density = 0.0010\n    env.fog_height = 0.0
     $WorldEnvironment.environment = env
     $Sun.light_color = Color(1.0, 0.88, 0.73)
     $Sun.light_energy = 0.60

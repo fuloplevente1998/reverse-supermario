@@ -8,6 +8,7 @@
 #include "Stage/RPStageDefinition.h"
 #include "Stage/RPStageSegmentDefinition.h"
 #include "Stage/RPStageSegmentActor.h"
+#include "Stage/RPStageBlockoutSegment.h"
 
 ARPStageGenerator::ARPStageGenerator()
 {
@@ -162,10 +163,9 @@ void ARPStageGenerator::SpawnSegmentActor(const int32 SegmentIndex)
     const FRPGeneratedSegment& Segment = GeneratedSegments[SegmentIndex];
     FRandomStream SegmentRandom(Segment.Seed);
     URPStageSegmentDefinition* Definition = ChooseDefinition(Segment.Type, SegmentRandom);
-    if (!Definition || !Definition->SegmentActorClass)
-    {
-        return;
-    }
+    TSubclassOf<AActor> SegmentClass = (Definition && Definition->SegmentActorClass)
+        ? Definition->SegmentActorClass
+        : ARPStageBlockoutSegment::StaticClass();
 
     FActorSpawnParameters Params;
     Params.Owner = this;
@@ -175,7 +175,7 @@ void ARPStageGenerator::SpawnSegmentActor(const int32 SegmentIndex)
         + FVector((Segment.StartMeter + Segment.LengthMeters * 0.5f) * 100.0f, 0.0f, 0.0f);
 
     AActor* SegmentActor = GetWorld()->SpawnActor<AActor>(
-        Definition->SegmentActorClass,
+        SegmentClass,
         Location,
         GetActorRotation(),
         Params);

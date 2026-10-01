@@ -1,0 +1,116 @@
+#include "Player/RPPlayerCharacter.h"
+
+#include "Camera/CameraComponent.h"
+#include "Camera/RPCameraModeComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
+#include "GameFramework/PlayerController.h"
+#include "GameFramework/SpringArmComponent.h"
+
+ARPPlayerCharacter::ARPPlayerCharacter()
+{
+    PrimaryActorTick.bCanEverTick = true;
+
+    GetCharacterMovement()->MaxWalkSpeed = 520.0f;
+    GetCharacterMovement()->JumpZVelocity = 720.0f;
+    GetCharacterMovement()->AirControl = 0.45f;
+    GetCharacterMovement()->GravityScale = 1.8f;
+
+    CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
+    CameraBoom->SetupAttachment(RootComponent);
+    CameraBoom->TargetArmLength = 900.0f;
+    CameraBoom->bDoCollisionTest = true;
+
+    FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
+    FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
+    FollowCamera->bUsePawnControlRotation = false;
+
+    CameraMode = CreateDefaultSubobject<URPCameraModeComponent>(TEXT("CameraMode"));
+}
+
+void ARPPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
+{
+    Super::SetupPlayerInputComponent(PlayerInputComponent);
+
+    PlayerInputComponent->BindAxis(TEXT("MoveForward"), this, &ARPPlayerCharacter::MoveForward);
+    PlayerInputComponent->BindAxis(TEXT("MoveRight"), this, &ARPPlayerCharacter::MoveRight);
+    PlayerInputComponent->BindAxis(TEXT("Turn"), this, &ARPPlayerCharacter::Turn);
+    PlayerInputComponent->BindAxis(TEXT("LookUp"), this, &ARPPlayerCharacter::LookUp);
+
+    PlayerInputComponent->BindAction(TEXT("Jump"), IE_Pressed, this, &ACharacter::Jump);
+    PlayerInputComponent->BindAction(TEXT("Jump"), IE_Released, this, &ACharacter::StopJumping);
+    PlayerInputComponent->BindAction(TEXT("Attack"), IE_Pressed, this, &ARPPlayerCharacter::Attack);
+    PlayerInputComponent->BindAction(TEXT("Block"), IE_Pressed, this, &ARPPlayerCharacter::StartBlock);
+    PlayerInputComponent->BindAction(TEXT("Block"), IE_Released, this, &ARPPlayerCharacter::StopBlock);
+    PlayerInputComponent->BindAction(TEXT("ToggleView"), IE_Pressed, this, &ARPPlayerCharacter::ToggleView);
+}
+
+void ARPPlayerCharacter::MoveForward(const float Value)
+{
+    if (FMath::IsNearlyZero(Value))
+    {
+        return;
+    }
+
+    if (CameraMode && CameraMode->GetCameraMode() == ERPCameraMode::SideView)
+    {
+        AddMovementInput(FVector::XAxisVector, Value);
+        return;
+    }
+
+    const AController* C = GetController();
+    const FRotator Rotation = C ? C->GetControlRotation() : FRotator::ZeroRotator;
+    const FVector Direction = FRotationMatrix(FRotator(0.0f, Rotation.Yaw, 0.0f)).GetUnitAxis(EAxis::X);
+    AddMovementInput(Direction, Value);
+}
+
+void ARPPlayerCharacter::MoveRight(const float Value)
+{
+    if (FMath::IsNearlyZero(Value) || (CameraMode && CameraMode->GetCameraMode() == ERPCameraMode::SideView))
+    {
+        return;
+    }
+
+    const AController* C = GetController();
+    const FRotator Rotation = C ? C->GetControlRotation() : FRotator::ZeroRotator;
+    const FVector Direction = FRotationMatrix(FRotator(0.0f, Rotation.Yaw, 0.0f)).GetUnitAxis(EAxis::Y);
+    AddMovementInput(Direction, Value);
+}
+
+void ARPPlayerCharacter::Turn(const float Value)
+{
+    if (!CameraMode || CameraMode->GetCameraMode() == ERPCameraMode::ThirdPerson)
+    {
+        AddControllerYawInput(Value);
+    }
+}
+
+void ARPPlayerCharacter::LookUp(const float Value)
+{
+    if (!CameraMode || CameraMode->GetCameraMode() == ERPCameraMode::ThirdPerson)
+    {
+        AddControllerPitchInput(Value);
+    }
+}
+
+void ARPPlayerCharacter::Attack()
+{
+    OnAttackRequested();
+}
+
+void ARPPlayerCharacter::StartBlock()
+{
+    OnBlockChanged(true);
+}
+
+void ARPPlayerCharacter::StopBlock()
+{
+    OnBlockChanged(false);
+}
+
+void ARPPlayerCharacter::ToggleView()
+{
+    if (CameraMode)
+    {
+        CameraMode->ToggleCameraMode();
+    }
+}

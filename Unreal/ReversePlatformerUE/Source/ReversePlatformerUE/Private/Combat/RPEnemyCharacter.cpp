@@ -2,6 +2,7 @@
 
 #include "Combat/RPEncounterDirectorComponent.h"
 #include "Combat/RPHealthComponent.h"
+#include "Combat/RPMeleeCombatComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 
 ARPEnemyCharacter::ARPEnemyCharacter()
@@ -9,6 +10,10 @@ ARPEnemyCharacter::ARPEnemyCharacter()
     PrimaryActorTick.bCanEverTick = true;
 
     Health = CreateDefaultSubobject<URPHealthComponent>(TEXT("Health"));
+    MeleeCombat = CreateDefaultSubobject<URPMeleeCombatComponent>(TEXT("MeleeCombat"));
+    MeleeCombat->Damage = BaseDamage;
+    MeleeCombat->Range = AttackRange;
+    MeleeCombat->Cooldown = AttackCooldown;
     GetCharacterMovement()->MaxWalkSpeed = 320.0f;
 }
 

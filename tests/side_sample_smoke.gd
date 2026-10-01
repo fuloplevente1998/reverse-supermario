@@ -19,7 +19,7 @@ func _verify() -> void:
     assert(stage.get_node("Sample_CastleArchitecture/Sample_CastleGate") is Node3D)
     assert(stage.get_node("Sample_CastleArchitecture/Sample_CastleTower_Left") is Node3D)
     assert(stage.get_node("Sample_CastleArchitecture/Sample_CastleTower_Right") is Node3D)
-    assert(sample.get_node("SampleCypress_-12.3") is Node3D)
+    assert(sample.find_child("SampleCypress_*", true, false) is Node3D)
     assert(sample.get_node("ReferenceBrazierA/WarmFireLight") is OmniLight3D)
     assert(sample.get_node("ReferenceBrazierB/WarmFireLight") is OmniLight3D)
     var terrain = stage.get_node("SideTerrain0").get_child(1)

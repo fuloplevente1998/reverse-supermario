@@ -1,6 +1,7 @@
 #include "Player/RPPlayerCharacter.h"
 
 #include "Camera/CameraComponent.h"
+#include "Components/InputComponent.h"
 #include "Camera/RPCameraModeComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/PlayerController.h"
@@ -53,7 +54,7 @@ void ARPPlayerCharacter::MoveForward(const float Value)
 
     if (CameraMode && CameraMode->GetCameraMode() == ERPCameraMode::SideView)
     {
-        AddMovementInput(FVector::XAxisVector, Value);
+        AddMovementInput(FVector::ForwardVector, Value);
         return;
     }
 

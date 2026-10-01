@@ -10,17 +10,17 @@ static func build(game: Node3D) -> void:
     root.set_meta("sample_end_z", 10.0)
     root.set_meta("reference_pass", "2026-10-01")
 
-    var limestone := Art.material(Color("#e8d8b8"))
+    var limestone := Art.material(Color("#d7c29e"))
     limestone.albedo_texture = preload("res://assets/terrain/sample_limestone.svg")
     limestone.roughness = 0.82
     limestone.vertex_color_use_as_albedo = true
 
-    var darker_limestone := Art.material(Color("#bda98a"))
+    var darker_limestone := Art.material(Color("#9f8c73"))
     darker_limestone.albedo_texture = preload("res://assets/terrain/sample_limestone.svg")
     darker_limestone.roughness = 0.92
     darker_limestone.vertex_color_use_as_albedo = true
 
-    var mortar := Art.material(Color("#6b6256"))
+    var mortar := Art.material(Color("#554d43"))
     mortar.roughness = 1.0
 
     # A recessed warm-grey backing is visible in the joints so the wall reads as
@@ -97,19 +97,19 @@ static func build(game: Node3D) -> void:
     game.set_meta("side_reference_layers", 3)
 
 static func _build_middle_distance(game: Node3D) -> void:
-    var left_wall := WorldScenery.place(game, "castle_wall", Vector3(7.2, 0.0, -10.5), Vector3(0.82, 0.92, 0.82), PI * 0.5)
+    var left_wall := WorldScenery.place(game, "castle_wall", Vector3(9.0, 0.0, -10.5), Vector3(0.68, 0.78, 0.68), PI * 0.5)
     if left_wall:
         left_wall.name = "Sample_CastleWall_Left"
         WorldScenery.set_render_layer(left_wall, 4)
         _set_shadows(left_wall, true)
 
-    var right_wall := WorldScenery.place(game, "castle_wall", Vector3(7.2, 0.0, 8.0), Vector3(0.82, 0.92, 0.82), PI * 0.5)
+    var right_wall := WorldScenery.place(game, "castle_wall", Vector3(9.0, 0.0, 8.0), Vector3(0.68, 0.78, 0.68), PI * 0.5)
     if right_wall:
         right_wall.name = "Sample_CastleWall_Right"
         WorldScenery.set_render_layer(right_wall, 4)
         _set_shadows(right_wall, true)
 
-    var gate := WorldScenery.place(game, "fortress_gate", Vector3(8.5, 0.0, -0.5), Vector3.ONE * 0.52, PI * 0.5)
+    var gate := WorldScenery.place(game, "fortress_gate", Vector3(10.2, 0.0, -0.5), Vector3.ONE * 0.40, PI * 0.5)
     if gate:
         gate.name = "Sample_CastleGate"
         WorldScenery.set_render_layer(gate, 4)
@@ -140,9 +140,9 @@ static func _build_garden(root: Node3D, game: Node3D) -> void:
             WorldScenery.set_render_layer(tree, 4)
             _set_shadows(tree, true)
 
-    var leaf := Art.material(Color("#496f38"))
+    var leaf := Art.material(Color("#36583a"))
     leaf.roughness = 0.95
-    var leaf_light := Art.material(Color("#6f8f49"))
+    var leaf_light := Art.material(Color("#557744"))
     leaf_light.roughness = 0.95
     var berry := Art.material(Color("#a7354b"))
     berry.roughness = 0.88

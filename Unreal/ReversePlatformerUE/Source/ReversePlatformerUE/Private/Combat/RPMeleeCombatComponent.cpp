@@ -52,7 +52,7 @@ bool URPMeleeCombatComponent::TryAttack()
         return true;
     }
 
-    TSet<TObjectPtr<AActor>> DamagedActors;
+    TSet<AActor*> DamagedActors;
     for (const FHitResult& Hit : Hits)
     {
         AActor* HitActor = Hit.GetActor();

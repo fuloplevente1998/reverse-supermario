@@ -113,7 +113,7 @@ func _on_checkpoint_entered(body: Node3D, spawn: Vector3 = Vector3(0, 1.1, 16.0)
         _pulse_status("ELLENŐRZŐPONT AKTÍV")
 
 func side_ground_height(z: float) -> float:
-    return StageGenerator.ground_height(stage_number, z)
+    return StageGenerator.ground_height(stage_number, z, difficulty_index)
 
 func _connect_gameplay() -> void:
     player.hp_changed.connect(_on_hp_changed)
@@ -173,7 +173,7 @@ func _style_interface() -> void:
     $UI/HealthPanel.add_child(hp_text)
 
     objective_label = Label.new()
-    objective_label.text = "%d. PÁLYA: %s — ÉRD EL A KAPUT" % [stage_number, StageGenerator.title(stage_number)]
+    objective_label.text = "%d. PÁLYA: %s — %s" % [stage_number, StageGenerator.title(stage_number), StageGenerator.goal(stage_number)]
     objective_label.position = Vector2(24, 78)
     objective_label.add_theme_font_size_override("font_size", 16)
     $UI.add_child(objective_label)
@@ -624,7 +624,7 @@ func _build_boundaries() -> void:
     var stone := StandardMaterial3D.new()
     stone.albedo_color = Color(0.49, 0.57, 0.6)
     stone.roughness = 0.92
-    var end_z := StageGenerator.end_z(stage_number)
+    var end_z := StageGenerator.end_z(stage_number, difficulty_index)
     var center_z := (end_z - 15.0) * 0.5
     _boundary("BoundaryWest", Vector3(-half_width, 5, center_z), Vector3(0.5, 12, end_z + 15), stone)
     _boundary("BoundaryEast", Vector3(half_width, 5, center_z), Vector3(0.5, 12, end_z + 15), stone)

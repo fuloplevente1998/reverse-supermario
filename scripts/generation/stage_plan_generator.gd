@@ -5,8 +5,8 @@ const DifficultyProfiles = preload("res://scripts/generation/difficulty_profiles
 const SegmentCatalog = preload("res://scripts/generation/segment_catalog.gd")
 
 static func generate(stage_number: int, difficulty_index: int = 1, seed_override: int = 0) -> Dictionary:
-    var spec := StageCatalog.get_stage(stage_number)
-    var difficulty := DifficultyProfiles.get_profile(difficulty_index)
+    var spec: Dictionary = StageCatalog.get_stage(stage_number)
+    var difficulty: Dictionary = DifficultyProfiles.get_profile(difficulty_index)
     var seed_value := seed_override if seed_override != 0 else int(spec["base_seed"])
     seed_value += difficulty_index * 1000003
 

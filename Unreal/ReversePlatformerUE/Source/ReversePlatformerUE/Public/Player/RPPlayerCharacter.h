@@ -18,6 +18,7 @@ public:
     ARPPlayerCharacter();
 
     virtual void BeginPlay() override;
+    virtual void Tick(float DeltaSeconds) override;
     virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
 
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Camera")
@@ -38,6 +39,24 @@ public:
     UFUNCTION(BlueprintCallable, Category="Reverse Platformer|Input")
     void ToggleView();
 
+    UFUNCTION(BlueprintCallable, Category="Reverse Platformer|Mobile")
+    void SetMobileMoveInput(FVector2D Value);
+
+    UFUNCTION(BlueprintCallable, Category="Reverse Platformer|Mobile")
+    void MobileJumpPressed();
+
+    UFUNCTION(BlueprintCallable, Category="Reverse Platformer|Mobile")
+    void MobileJumpReleased();
+
+    UFUNCTION(BlueprintCallable, Category="Reverse Platformer|Mobile")
+    void MobileAttack();
+
+    UFUNCTION(BlueprintCallable, Category="Reverse Platformer|Mobile")
+    void MobileBlockPressed();
+
+    UFUNCTION(BlueprintCallable, Category="Reverse Platformer|Mobile")
+    void MobileBlockReleased();
+
     UFUNCTION(BlueprintImplementableEvent, Category="Reverse Platformer|Combat")
     void OnAttackRequested();
 
@@ -57,4 +76,5 @@ protected:
     void HandleDeath();
 
     FTransform InitialSpawnTransform;
+    FVector2D MobileMoveInput = FVector2D::ZeroVector;
 };

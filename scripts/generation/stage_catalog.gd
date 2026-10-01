@@ -13,7 +13,7 @@ const STAGES := [
         "min_length": 700.0,
         "max_length": 800.0,
         "base_seed": 11001,
-        "segment_weights": {"traversal": 4, "combat_small": 3, "combat_large": 2, "bridge": 1, "stairs": 2, "hazard": 1, "archer_ambush": 2, "vista": 2, "tower": 2, "gate": 1},
+        "segment_weights": {"traversal": 4, "combat_small": 3, "combat_large": 2, "bridge": 1, "gap": 1, "stairs": 2, "hazard": 1, "archer_ambush": 2, "vista": 2, "tower": 2, "gate": 1},
         "signature_segments": ["vista", "fountain_court", "tower", "bridge", "gate_approach"],
         "enemy_pool": ["guard", "shield_guard", "archer"],
         "hazard_pool": ["spikes", "gap"],

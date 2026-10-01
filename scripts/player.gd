@@ -207,8 +207,10 @@ func _build_character_visual() -> void:
     add_child(visual_root)
     var model := KNIGHT_MODEL.instantiate() as Node3D
     model.name = "KnightModel"
-    model.position.y = -0.9
-    model.scale = Vector3.ONE * 0.9
+    # Side-view reference pass: slightly larger authored model for a stronger mobile silhouette.
+    # Collision, movement and attack range stay unchanged.
+    model.position.y = -1.0
+    model.scale = Vector3.ONE
     visual_root.add_child(model)
     model_animation = model.find_child("AnimationPlayer", true, false) as AnimationPlayer
     body_mesh = model.find_child("KnightRuntime", true, false) as MeshInstance3D

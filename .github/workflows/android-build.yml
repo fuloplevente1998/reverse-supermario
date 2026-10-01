@@ -2,8 +2,12 @@ name: Android Debug APK
 
 on:
   push:
-    branches: [ "main", "art/blender-knight-study" ]
+    branches: [ "main", "art/blender-knight-study", "art/side-reference-pass-0.1.9" ]
   workflow_dispatch:
+
+concurrency:
+  group: android-preview-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build-android:
@@ -200,7 +204,7 @@ jobs:
 
   publish-preview:
     needs: build-android
-    if: github.ref == 'refs/heads/art/blender-knight-study'
+    if: github.ref == 'refs/heads/art/blender-knight-study' || github.ref == 'refs/heads/art/side-reference-pass-0.1.9'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -218,9 +222,15 @@ jobs:
           BUILD_NUMBER: ${{ github.run_number }}
         shell: bash
         run: |
-          TAG="preview-0.1.8-${BUILD_NUMBER}"
+          if [ "$GITHUB_REF_NAME" = "art/side-reference-pass-0.1.9" ]; then
+            TAG="preview-0.1.9-${BUILD_NUMBER}"
+            TITLE="0.1.9 – referencia-közeli oldalnézeti grafikai pass"
+          else
+            TAG="preview-0.1.8-${BUILD_NUMBER}"
+            TITLE="0.1.8 – játszható grafikai mintaszakasz"
+          fi
           if gh release view "$TAG" >/dev/null 2>&1; then
             gh release upload "$TAG" delivery/* --clobber
           else
-            gh release create "$TAG" delivery/* --target "$BUILD_SHA" --prerelease --title "0.1.8 – játszható grafikai mintaszakasz" --notes-file delivery/RELEASE_NOTES.md
+            gh release create "$TAG" delivery/* --target "$BUILD_SHA" --prerelease --title "$TITLE" --notes-file delivery/RELEASE_NOTES.md
           fi

@@ -9,7 +9,19 @@ func _verify() -> void:
     for i in range(3): await physics_frame
     var sample = stage.get_node("SideArtSample")
     assert(sample.get_meta("sample_end_z")-sample.get_meta("sample_start_z")==25.0)
+    assert(sample.get_meta("reference_pass")=="2026-10-01")
+    assert(stage.get_meta("side_reference_layers")==3)
     assert(sample.get_node("ReliefMasonry") is MultiMeshInstance3D)
+    assert(sample.get_node("DarkBaseMasonry") is MultiMeshInstance3D)
+    assert(sample.get_node("MortarBacking") is MeshInstance3D)
+    assert(stage.get_node("SideArtSample") is Node3D)
+    assert(stage.get_node("Sample_CastleArchitecture") is Node3D)
+    assert(stage.get_node("Sample_CastleArchitecture/Sample_CastleGate") is Node3D)
+    assert(stage.get_node("Sample_CastleArchitecture/Sample_CastleTower_Left") is Node3D)
+    assert(stage.get_node("Sample_CastleArchitecture/Sample_CastleTower_Right") is Node3D)
+    assert(sample.find_child("SampleCypress_*", true, false) is Node3D)
+    assert(sample.get_node("ReferenceBrazierA/WarmFireLight") is OmniLight3D)
+    assert(sample.get_node("ReferenceBrazierB/WarmFireLight") is OmniLight3D)
     var terrain = stage.get_node("SideTerrain0").get_child(1)
     var normals: PackedVector3Array = terrain.mesh.surface_get_arrays(0)[Mesh.ARRAY_NORMAL]
     assert(normals[0].x < -0.99 and normals[12].y > 0.99,"Terrain normals must point toward camera and sky")
@@ -21,6 +33,8 @@ func _verify() -> void:
     assert(guard.visual_root.find_child("Skeleton3D",true,false).get_bone_count()==17)
     stage.player._update_side_presentation()
     assert(stage.player.visual_root.scale.is_equal_approx(Vector3.ONE))
+    assert(stage.player.visual_root.get_node("KnightModel").scale.x >= 0.99)
+    assert(guard.visual_root.get_node("EnemyRig").scale.x >= 0.95)
     assert(absf(stage.player.visual_root.rotation.y)>0.5)
     assert(stage.hp_bar.get_theme_stylebox("fill").bg_color.r>0.7)
     for dimensions in [Vector2i(1280,720),Vector2i(1600,720),Vector2i(2400,1080)]:
@@ -78,7 +92,7 @@ func _verify() -> void:
     stage.player.attack()
     await create_timer(0.5).timeout
     assert(stage.enemies_defeated>0,"Detailed guard defeat path failed")
-    print("SIDE_SAMPLE_SMOKE_OK: 25m masonry/paving, 17-bone blue guard, hero presentation, HUD at 16:9/20:9/wide, safe area, multitouch/outside release and actual combat defeat")
+    print("SIDE_SAMPLE_SMOKE_OK: warm battlement arcade, masonry depth, authored cypress/braziers, larger hero/guard silhouettes, HUD safe area, multitouch and actual combat defeat")
     stage.queue_free()
     await process_frame
     quit(0)

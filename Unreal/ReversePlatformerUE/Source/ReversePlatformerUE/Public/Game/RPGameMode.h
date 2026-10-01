@@ -11,4 +11,6 @@ class REVERSEPLATFORMERUE_API ARPGameMode : public AGameModeBase
 
 public:
     ARPGameMode();
+
+    virtual void BeginPlay() override;
 };

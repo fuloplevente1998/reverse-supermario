@@ -25,5 +25,13 @@ void ARPStageSegmentActor::RebuildSegment()
     Environment->LengthMeters = LengthMeters;
     Environment->Palette = Palette;
     Environment->Seed = Seed;
-    Environment->BuildEnvironment();
+
+    if (Palette)
+    {
+        Environment->BuildEnvironment();
+    }
+    else
+    {
+        Environment->ClearEnvironment();
+    }
 }

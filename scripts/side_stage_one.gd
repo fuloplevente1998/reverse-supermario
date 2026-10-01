@@ -202,7 +202,11 @@ static func _background(game: Node3D) -> void:
     game.add_child(root)
     var mat := StandardMaterial3D.new()
     mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-    mat.albedo_texture = load("res://assets/backgrounds/courtyard_side_panorama.jpg")\n    # Keep the far painted layer subordinate to lit 3D gameplay geometry.\n    mat.albedo_color = Color(0.86, 0.87, 0.84, 1)\n    mat.cull_mode = BaseMaterial3D.CULL_DISABLED\n    for z in [-48.0,48.0,144.0,240.0]:
+    mat.albedo_texture = load("res://assets/backgrounds/courtyard_side_panorama.jpg")
+    # Keep the far painted layer subordinate to lit 3D gameplay geometry.
+    mat.albedo_color = Color(0.86, 0.87, 0.84, 1)
+    mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+    for z in [-48.0,48.0,144.0,240.0]:
         var mesh := QuadMesh.new()
         mesh.size = Vector2(96,32)
         var panel := MeshInstance3D.new()

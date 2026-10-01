@@ -270,6 +270,70 @@ void ARPStageGenerator::GenerateStage()
     Cursor += StartLength;
 
     const float ReservedEnding = 105.0f;
+    const float BodyMeters = FMath::Max(200.0f, TargetLength - StartLength - ReservedEnding);
+    const int32 DesiredBodySegments = FMath::Clamp(FMath::RoundToInt(BodyMeters / 38.0f), 10, 34);
+
+    // Build a deterministic authored-looking segment bag from each stage spec.
+    // This is what makes the ten stages share one generator without feeling
+    // like the same level with a different texture.
+    TArray<ERPStageSegmentType> BodyPlan;
+    BodyPlan.Reserve(DesiredBodySegments);
+
+    const int32 CombatTarget = FMath::Clamp(Spec.CombatCount, 3, DesiredBodySegments / 2);
+    for (int32 Index = 0; Index < CombatTarget; ++Index)
+    {
+        const bool bLarge = Difficulty == ERPDifficulty::Hard
+            ? (Index % 2 == 0)
+            : (Difficulty == ERPDifficulty::Easy ? (Index % 4 == 3) : (Index % 3 == 2));
+        BodyPlan.Add(bLarge ? ERPStageSegmentType::CombatLarge : ERPStageSegmentType::CombatSmall);
+    }
+
+    for (int32 Index = 0; Index < FMath::Min(Spec.VistaCount, 6); ++Index)
+    {
+        BodyPlan.Add(ERPStageSegmentType::Vista);
+    }
+    for (int32 Index = 0; Index < FMath::Min(Spec.BridgeCount, 6); ++Index)
+    {
+        BodyPlan.Add(ERPStageSegmentType::Bridge);
+    }
+    for (int32 Index = 0; Index < FMath::Min(Spec.HazardCount, 6); ++Index)
+    {
+        BodyPlan.Add(ERPStageSegmentType::Hazard);
+    }
+
+    BodyPlan.Add(ERPStageSegmentType::Tower);
+    BodyPlan.Add(ERPStageSegmentType::Stairs);
+
+    while (BodyPlan.Num() < DesiredBodySegments)
+    {
+        BodyPlan.Add((BodyPlan.Num() % 4 == 0)
+            ? ERPStageSegmentType::ArcherAmbush
+            : ERPStageSegmentType::Traversal);
+    }
+
+    // Trim lower-priority overflow while preserving the stage's combat/vista identity.
+    while (BodyPlan.Num() > DesiredBodySegments)
+    {
+        int32 RemoveIndex = BodyPlan.FindLastByPredicate([](const ERPStageSegmentType Type)
+        {
+            return Type == ERPStageSegmentType::Traversal
+                || Type == ERPStageSegmentType::Stairs
+                || Type == ERPStageSegmentType::Tower;
+        });
+        if (RemoveIndex == INDEX_NONE)
+        {
+            RemoveIndex = BodyPlan.Num() - 1;
+        }
+        BodyPlan.RemoveAt(RemoveIndex);
+    }
+
+    // Fisher-Yates with FRandomStream keeps the same seed reproducible.
+    for (int32 Index = BodyPlan.Num() - 1; Index > 0; --Index)
+    {
+        const int32 SwapIndex = Random.RandRange(0, Index);
+        BodyPlan.Swap(Index, SwapIndex);
+    }
+
     while (Cursor < TargetLength - ReservedEnding)
     {
         ERPStageSegmentType Type;
@@ -278,21 +342,24 @@ void ARPStageGenerator::GenerateStage()
             Type = ERPStageSegmentType::Checkpoint;
             NextCheckpoint += Tuning.CheckpointIntervalMeters;
         }
+        else if (BodyPlan.IsValidIndex(SegmentIndex))
+        {
+            Type = BodyPlan[SegmentIndex++];
+        }
         else
         {
-            Type = ChooseBodySegmentType(Random, Spec, SegmentIndex);
+            Type = ChooseBodySegmentType(Random, Spec, SegmentIndex++);
         }
 
         FRandomStream PreviewRandom(Random.RandHelper(MAX_int32));
         URPStageSegmentDefinition* Definition = ChooseDefinition(Type, PreviewRandom);
-        const float BaseLength = Definition ? Definition->LengthMeters : Random.FRandRange(32.0f, 58.0f);
+        const float BaseLength = Definition ? Definition->LengthMeters : Random.FRandRange(30.0f, 48.0f);
         const float Remaining = TargetLength - ReservedEnding - Cursor;
         const float Length = FMath::Clamp(BaseLength, 18.0f, FMath::Max(18.0f, Remaining));
         const int32 SegmentSeed = Random.RandHelper(MAX_int32);
 
         AddSegment(Type, Length, SegmentSeed, Cursor, Random);
         Cursor += Length;
-        ++SegmentIndex;
 
         if (Remaining <= 20.0f)
         {

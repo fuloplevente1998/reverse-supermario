@@ -14,6 +14,10 @@ on:
       - "docs/CHANGE_TO_UNREAL_ENGINE_MOBILE.md"
       - "tools/validate_unreal_rebuild.py"
 
+concurrency:
+  group: unreal-migration-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   validate:
     runs-on: ubuntu-latest

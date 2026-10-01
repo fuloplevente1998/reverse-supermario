@@ -92,6 +92,7 @@ static func generate(stage_number: int, difficulty_index: int = 1, seed_override
 
     assert(mandatory.is_empty(), "Missing required landmarks or checkpoints")
     cursor = _append_segment(segments, "traversal", cursor, lead_in_length, rng, spec, difficulty)
+    segments.back()["boss_approach"] = true
     assert(_allowed_after("traversal", "mini_boss", difficulty_index, 1.0))
     cursor = _append_segment(segments, "mini_boss", cursor, mini_length, rng, spec, difficulty)
     assert(_allowed_after("mini_boss", "finish", difficulty_index, 1.0))
@@ -123,6 +124,7 @@ static func _append_segment(segments: Array[Dictionary], segment_id: String, cur
         "length": segment_length,
         "end": cursor + segment_length,
         "variant_seed": rng.randi(),
+        "safe_recovery": not segments.is_empty() and (_requires_recovery(str(segments.back()["id"])) or str(segments.back()["id"]) == "checkpoint"),
         "biome": spec["biome"],
         "enemy_pool": spec["enemy_pool"],
         "hazard_pool": spec["hazard_pool"],

@@ -29,8 +29,8 @@ with zipfile.ZipFile(project_zip, "w", zipfile.ZIP_DEFLATED) as archive:
         "run": os.environ["GITHUB_RUN_ID"],
         "validation": "All preceding CI tests and screenshot generation completed successfully",
         "phone_validation": "Pending user device testing",
-        "reference_notes": "art/references/side-view-2026-10-01/README.md",
-        "reference_binaries": "Original chat attachments are documented but not stored in this build unless separately committed."
+        "reference_notes": "art/references/stage-mockups-2026-10-01/README.md",
+        "reference_binaries": "All ten original stage mockups are stored by stage title under art/references/stage-mockups-2026-10-01/."
     }, indent=2))
 
 apk = out / f"ReversePlatformer-{release_version}-teszt.apk"
@@ -48,7 +48,30 @@ for name in [
 ]:
     shutil.copyfile(root / "previews" / name, out / name)
 
-if release_version == "0.2.1":
+if release_version == "0.2.2":
+    for pattern, filename in [("side_course_03_*.png", "Varudvar-kozepe.png"), ("side_course_06_*.png", "Varudvar-kapu.png"), ("side_course_wide.png", "Varudvar-szeles.png")]:
+        image = next(iter(sorted((root / "previews").glob(pattern))), None)
+        if image is None:
+            raise RuntimeError(f"Missing full-course visual validation: {pattern}")
+        shutil.copyfile(image, out / filename)
+
+if release_version == "0.2.2":
+    notes = (
+        "# 0.2.2 – Várudvar: végig díszített, változatos útvonal\n\n"
+        "Az első pálya teljes 700–800 méterén falazott talaj, burkolat, "
+        "borostyán, virágok, ciprusok és Blenderben készített várfalak jelennek meg. "
+        "Teraszok, emelkedők, lejtők és ismétlődő ugróakadályok váltják a sík tesztpályát. "
+        "A szökőkút és torony valódi GLB díszletet kapott. A rések nyitva maradnak, "
+        "a checkpointok és veszélyek utáni pihenők ugróakadály nélküliek.\n\n"
+        "Mindhárom teljes útvonalat valódi játékosfizikával ellenőrzi a CI. "
+        "Külön teszt ellenőrzi a burkolatot a pálya végéig, a terep és az ütközés "
+        "egyezését, valamint a késői díszletek láthatóságát. "
+        "A tíz eredeti mockup pályanév szerint a projektben szerepel; "
+        "a további kilenc pálya saját biome-jának kidolgozása későbbi feladat. "
+        "Telefonos elfogadás még szükséges.\n\n"
+        f"Commit: {os.environ['GITHUB_SHA']}\n"
+    )
+elif release_version == "0.2.1":
     notes = (
         "# 0.2.1 – javított Várudvar-generátor és nehézség\n\n"
         "A kötelező pályarészek és checkpointok helyfoglalása, a mini-boss biztonságos "

@@ -111,6 +111,11 @@ func _verify_difficulty(difficulty: int) -> bool:
             reached = true
             break
 
+    if not reached:
+        print("TRAVERSAL_STUCK: position=%s velocity=%s on_floor=%s ground=%s" % [player.position, player.velocity, player.is_on_floor(), stage.side_ground_height(player.position.z)])
+        for segment: Dictionary in plan["segments"]:
+            if player.position.z >= float(segment["start"]) - 15 and player.position.z <= float(segment["end"]) - 15:
+                print("TRAVERSAL_SEGMENT: ", segment)
     if not _check(reached and farthest > course_end - 12.0, "Full 700-800m traversal did not reach the gate: %s / %s" % [farthest, course_end]): return false
     if not _check(stage.checkpoint_position.z > course_end * 0.60, "Late checkpoints were not activated"): return false
 

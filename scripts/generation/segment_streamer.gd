@@ -10,6 +10,15 @@ var ahead_distance := 240.0
 var refresh_distance := 12.0
 var last_z := -INF
 var active_count := 0
+var actors: Array[Node3D] = []
+var active_actor_count := 0
+
+func configure_actors(game: Node3D) -> void:
+    actors.clear()
+    for group in ["enemies", "hazards"]:
+        for actor: Node3D in get_tree().get_nodes_in_group(group):
+            if game.is_ancestor_of(actor): actors.append(actor)
+    _refresh(true)
 
 func configure(root: Node3D, player: Node3D, behind: float = 100.0, ahead: float = 240.0) -> void:
     stage_root = root
@@ -42,10 +51,18 @@ func _refresh(force: bool) -> void:
         var start_z := float(segment_root.position.z)
         var length := float(segment_root.get_meta("length", 0.0))
         var active := start_z + length >= min_z and start_z <= max_z
-        segment_root.visible = active
+        # Physics has a generous window; the side camera only needs nearby art.
+        segment_root.visible = start_z + length >= current_z - 35.0 and start_z <= current_z + 65.0
         segment_root.process_mode = Node.PROCESS_MODE_INHERIT if active else Node.PROCESS_MODE_DISABLED
         if active:
             active_count += 1
+    active_actor_count = 0
+    for actor: Node3D in actors:
+        if not is_instance_valid(actor): continue
+        var active := actor.global_position.z >= current_z - 45.0 and actor.global_position.z <= current_z + 65.0
+        actor.visible = active
+        actor.process_mode = Node.PROCESS_MODE_INHERIT if active else Node.PROCESS_MODE_DISABLED
+        if active: active_actor_count += 1
 
 func get_active_count() -> int:
     return active_count

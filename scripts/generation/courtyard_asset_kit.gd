@@ -31,11 +31,14 @@ static func place(parent: Node3D, id: String, at: Vector3, dimensions: Vector3, 
     model.rotation.y = yaw
     model.scale = dimensions
     parent.add_child(model)
+    if Pilot.enabled and id in ["stone", "stone_alt"]:
+        for visual: MeshInstance3D in model.find_children("*", "MeshInstance3D", true, false):
+            visual.mesh = Pilot.mesh_variant(visual.mesh)
     return model
 
 static func gap_for(difficulty: int) -> Vector2:
     # Hard's archer ambush is followed by a mandatory recovery. No extra pit.
-    return Vector2(77.0, 77.0 + [2.4, 3.0, 0.0][difficulty]) if difficulty < 2 else Vector2.ZERO
+    return Vector2(77.0, 77.0 + [1.8, 2.2, 0.0][difficulty]) if difficulty < 2 else Vector2.ZERO
 
 static func opening_obstacle_specs(difficulty: int, plan: Dictionary) -> Array[Dictionary]:
     var occupied: Array[float] = [8.0]

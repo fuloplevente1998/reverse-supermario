@@ -48,14 +48,37 @@ for name in [
 ]:
     shutil.copyfile(root / "previews" / name, out / name)
 
-if release_version in ("0.2.2", "0.2.3", "0.2.4"):
+if release_version in ("0.2.2", "0.2.3", "0.2.4", "0.2.5"):
     for pattern, filename in [("side_course_03_*.png", "Varudvar-kozepe.png"), ("side_course_06_*.png", "Varudvar-kapu.png"), ("side_course_wide.png", "Varudvar-szeles.png")]:
         image = next(iter(sorted((root / "previews").glob(pattern))), None)
         if image is None:
             raise RuntimeError(f"Missing full-course visual validation: {pattern}")
         shutil.copyfile(image, out / filename)
 
-if release_version == "0.2.4":
+if release_version == "0.2.5":
+    subprocess.run(["python3", str(root / "tools/meshy_retexture.py"), "kit", "--zip", str(out / "Meshy-Varudvar-kit.zip")], check=True)
+    shutil.copyfile(root / "previews/title_startup_ready.png", out / "title_startup_ready.png")
+    for name in ["first100_00.png", "first100_02.png", "first100_04.png", "first100_wide.png", "material_pilot_original.png", "material_pilot_ai.png"]:
+        shutil.copyfile(root / "previews" / name, out / name)
+    notes = (
+        "# 0.2.5 – egységes AI mészkő és nyugodtabb mozgás\n\n"
+        "A teljes Várudvar előtéri kőelemei, pillérei, fedkövei és kőakadályai "
+        "a kedvelt nyitószakasz képgenerált mészkőanyagát használják. A fugázott "
+        "falmezők, fa és növényzet meglévő anyagai megmaradnak.\n\n"
+        "Az első pályán a mozgás 7,2 helyett 5,4 m/s, az ugrósebesség 8,0 helyett "
+        "6,4 m/s. A réseket és hidat az új ugráshoz igazítottuk; mindhárom "
+        "teljes útvonalat valódi játékosfizikával ellenőrzi a CI.\n\n"
+        "Oldalnézetes induláskor a régi 3D udvar nem töltődik be; nézetváltáskor "
+        "egyszer betöltjük. A távoli őrök és csapdák feldolgozása/animációja "
+        "szünetel. A menü háttérben tölti a jelenetet, majd rövid betöltési "
+        "szakasz alatt kirajzoljuk a nyitórészt. Ez célzott terheléscsökkentés, "
+        "a telefonos akadás megszűnését és FPS-t még ellenőrizni kell.\n\n"
+        "A Meshy API előkészítő elkészült: tools/meshy_retexture.py, "
+        "docs/MESHY_WORKFLOW.md. Meshy-generálás még nem futott; nincs "
+        "hozzákapcsolt fiók/API-kulcs.\n\n"
+        f"Commit: {os.environ['GITHUB_SHA']}\n"
+    )
+elif release_version == "0.2.4":
     for name in ["material_pilot_original.png", "material_pilot_ai.png"]:
         shutil.copyfile(root / "previews" / name, out / name)
     for name in ["first100_00.png", "first100_02.png", "first100_04.png", "first100_wide.png"]:

@@ -86,7 +86,7 @@ func _verify_difficulty(difficulty: int) -> bool:
     var reached := false
     var camera_y: float = rig.global_position.y
 
-    for frame in range(11000):
+    for frame in range(15000):
         player.touch_axis = Vector2(1, 0)
         # A raised stair face requires a real jump as well as the marked pits.
         if player.is_on_floor() and player.position.z > -5.0 and absf(player.velocity.z) < 0.5:
@@ -94,7 +94,7 @@ func _verify_difficulty(difficulty: int) -> bool:
 
         for gap_value in gaps:
             var gap: Vector2 = gap_value
-            if player.position.z >= gap.x - 3.1 and player.position.z <= gap.x + 0.35 and player.is_on_floor():
+            if player.position.z >= gap.x - 1.15 and player.position.z <= gap.x + 0.35 and player.is_on_floor():
                 player.touch_jump = true
                 break
 

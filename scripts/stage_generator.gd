@@ -60,7 +60,7 @@ static func build(game: Node3D, number: int) -> void:
     var trim := Art.material(Color("#dbbd7f"), 0.3)
     if number == 1:
         LongStageOne.build(game)
-        _scenery(game, number, recipe, stone, trim)
+        # The legacy 3D courtyard is loaded only when its camera is requested.
         game.set_meta("layout_id", number)
         game.set_meta("difficulty", difficulty)
         return
@@ -86,6 +86,14 @@ static func build(game: Node3D, number: int) -> void:
         _hazard(game, "spikes", -4.5, 22.0, 0.8)
     game.set_meta("layout_id", number)
     game.set_meta("difficulty", difficulty)
+
+static func ensure_free_view_scenery(game: Node3D) -> void:
+    if game.get_meta("free_view_scenery_loaded", false): return
+    var existing := game.get_children()
+    _scenery(game, 1, STAGES[0], Art.material(STAGES[0]["color"]), Art.material(Color("#dbbd7f"), 0.3))
+    for child in game.get_children():
+        if child not in existing: child.add_to_group("free_view_scenery")
+    game.set_meta("free_view_scenery_loaded", true)
 
 static func _layout(game: Node3D, number: int, stone: Material, trim: Material) -> void:
     match number:

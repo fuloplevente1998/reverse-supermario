@@ -59,6 +59,8 @@ static func height_at(difficulty_index: int, z: float) -> float:
     return 0.0
 
 static func build(game: Node3D) -> void:
+    game.player.move_speed = 5.4
+    game.player.jump_velocity = 6.4
     game.player.floor_snap_length = 0.35
     game.player.floor_constant_speed = true
 
@@ -115,6 +117,7 @@ static func build(game: Node3D) -> void:
     streamer.name = "LongStageStreamer"
     game.add_child(streamer)
     streamer.configure(stage_root, game.player, 100.0, 240.0)
+    streamer.configure_actors(game)
 
 static func _build_segment_geometry(stage_root: Node3D, game: Node3D, segment: Dictionary, mortar: Material, trim: Material, hazard_mat: Material, gaps: Array[Vector2], hurdles: Array[float]) -> void:
     var segment_root := Node3D.new()

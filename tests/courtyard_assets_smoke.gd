@@ -22,13 +22,13 @@ func _verify() -> void:
         for segment: Node3D in course.get_children():
             var ground := segment.get_node("CourtyardCourseArt")
             var expected := Pilot.applies(segment.position.z)
-            if not _check(bool(ground.get_meta("ai_material_pilot")) == expected, "AI pilot escaped opening segment"): return
+            if not _check(bool(ground.get_meta("ai_material_pilot")) == expected, "AI limestone missing from a course segment"): return
             var masonry := ground.get_node("ReliefMasonry") as MultiMeshInstance3D
             if expected:
                 pilot_count += 1
                 if not _check(masonry.material_override == Pilot.MATERIAL, "AI albedo not applied to pilot ground"): return
             elif not _check(masonry.material_override != Pilot.MATERIAL, "AI pilot replaced whole course"): return
-        if not _check(pilot_count == 1 and Pilot.MATERIAL.uv1_world_triplanar and Pilot.MATERIAL.albedo_texture != null, "Pilot mapping or isolation failed"): return
+        if not _check(pilot_count == course.get_child_count() and Pilot.MATERIAL.uv1_world_triplanar and Pilot.MATERIAL.albedo_texture != null, "Full-course AI mapping failed"): return
         var scenery := get_nodes_in_group("courtyard_scenery")
         if not _check(scenery.size() == course.get_child_count(), "A course segment has no kit scenery"): return
         var saved_draw_instances := 0

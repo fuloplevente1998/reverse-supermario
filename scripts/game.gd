@@ -35,6 +35,9 @@ func set_side_view(enabled: bool) -> void:
         return
     side_view = enabled
     if stage_number == 1:
+        if not enabled: StageGenerator.ensure_free_view_scenery(self)
+        for scenery in get_tree().get_nodes_in_group("free_view_scenery"):
+            if is_ancestor_of(scenery): scenery.visible = not enabled
         var env: Environment = $WorldEnvironment.environment
         # Reference pass: stronger warm key and restrained cool fill restore
         # shape to armor/stone instead of flattening the foreground.
@@ -74,6 +77,7 @@ func _raise_to_safe_center(actor: CharacterBody3D) -> void:
         actor.velocity.y = maxf(actor.velocity.y, 0.0)
 
 func _ready() -> void:
+    var build_started := Time.get_ticks_msec()
     $UI.process_mode = Node.PROCESS_MODE_ALWAYS
     _load_difficulty()
     _setup_environment()
@@ -86,6 +90,31 @@ func _ready() -> void:
     _on_hp_changed(player.hp)
     if stage_number == 1:
         $Player/CameraPivot.set_view(true)
+    set_meta("stage_build_ms", Time.get_ticks_msec() - build_started)
+    if get_tree().get_meta("warm_enter", false):
+        get_tree().remove_meta("warm_enter")
+        call_deferred("_warm_start")
+
+func _warm_start() -> void:
+    # Render the actual opening before accepting play input. The UI stays live.
+    var previous_mode := process_mode
+    process_mode = Node.PROCESS_MODE_DISABLED
+    var cover := ColorRect.new()
+    cover.name = "StartupCover"
+    cover.color = Color("#142639")
+    cover.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+    $UI.add_child(cover)
+    var label := Label.new()
+    label.text = "PÁLYA BETÖLTÉSE…"
+    label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+    label.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+    cover.add_child(label)
+    for frame in range(8): await get_tree().process_frame
+    await get_tree().create_timer(0.35, true).timeout
+    process_mode = previous_mode
+    cover.queue_free()
+    set_meta("startup_ready", true)
 
 func _physics_process(_delta: float) -> void:
     if not ended and player.global_position.y < -6.0:

@@ -1,5 +1,11 @@
 # Képalapú mészkő anyagpróba – 0.2.4
 
+**0.2.5 frissítés:** a felhasználó a nyitószakasz anyagát választotta. Az
+alábbi leírás az eredeti 0.2.4-próbát dokumentálja; 0.2.5-ben az anyag a
+teljes Várudvar pilléreire, fedköveire, előtéri falazatára és kőakadályaira
+kiterjed. A fugázott falmező eredeti atlasza megmarad. Részletek:
+[COURTYARD_0.2.5.md](COURTYARD_0.2.5.md). Nem történt új képgenerálás.
+
 Eszköz: beépített imagegen képgenerálás, nem CLI és nem Meshy vagy Adobe.
 Referencia: `art/references/stage-mockups-2026-10-01/stage01-varudvar.png`.
 Kimenet: `assets/materials/ai/courtyard_limestone_v1.png`, 1254×1254 PNG.

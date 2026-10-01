@@ -22,7 +22,7 @@ func _verify() -> void:
         for enemy in get_nodes_in_group("enemies"):
             enemy.set_physics_process(false)
             exclude.append(enemy.get_rid())
-        for solid in get_nodes_in_group("first100_solids"):
+        for solid in get_nodes_in_group("courtyard_solids"):
             exclude.append(solid.get_rid())
         for hazard in get_nodes_in_group("hazards"):
             hazard.set_physics_process(false)
@@ -46,10 +46,11 @@ func _verify() -> void:
             if not _check(bool(art.get_meta("authored_kit")), "Late route lost the authored art kit"): return
             if not _check(masonry.multimesh.instance_count > 0 and paving.multimesh.instance_count > 0, "Ground relief is missing on segment %s" % segment.name): return
             if not _check((paving.material_override as StandardMaterial3D).albedo_texture != null, "Long course paving has no texture"): return
-            var safe := bool(segment.get_meta("safe_recovery", false)) or bool(segment.get_meta("boss_approach", false))
+            if not _check(str(art.get_meta("asset_author", "")) == "Quaternius", "Late ground reverted to the old placeholder kit"): return
+            var clear_length := float(segment.get_meta("recovery_clear_length", 0.0))
             for child in segment.get_children():
-                if safe and str(child.name).begins_with("CourtyardHurdle"):
-                    if not _check(false, "Jump obstacle added to safe recovery/boss approach"): return
+                if child.is_in_group("courtyard_obstacles") and child.position.z - 2.4 < clear_length:
+                    if not _check(false, "Jump obstacle overlaps clear recovery/boss approach"): return
         # Compare terrain queries used by the camera/spawns with actual collision.
         # Avoid obstacle tops and pit edges where the expected height is different.
         var z := 28.0

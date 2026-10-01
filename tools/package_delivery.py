@@ -48,14 +48,41 @@ for name in [
 ]:
     shutil.copyfile(root / "previews" / name, out / name)
 
-if release_version in ("0.2.2", "0.2.3"):
+if release_version in ("0.2.2", "0.2.3", "0.2.4"):
     for pattern, filename in [("side_course_03_*.png", "Varudvar-kozepe.png"), ("side_course_06_*.png", "Varudvar-kapu.png"), ("side_course_wide.png", "Varudvar-szeles.png")]:
         image = next(iter(sorted((root / "previews").glob(pattern))), None)
         if image is None:
             raise RuntimeError(f"Missing full-course visual validation: {pattern}")
         shutil.copyfile(image, out / filename)
 
-if release_version == "0.2.3":
+if release_version == "0.2.4":
+    for name in ["material_pilot_original.png", "material_pilot_ai.png"]:
+        shutil.copyfile(root / "previews" / name, out / name)
+    for name in ["first100_00.png", "first100_02.png", "first100_04.png", "first100_wide.png"]:
+        shutil.copyfile(root / "previews" / name, out / name)
+    notes = (
+        "# 0.2.4 – teljes Várudvar a mintaszakasz stílusában\n\n"
+        "A 700–800 méteres első pálya végig a 0.2.3 mintaszakasz Quaternius CC0 "
+        "assetkészletét használja. Textúrázott falazat, burkolat, kapuk, zászlók, "
+        "borostyán, ciprusok és udvari kellékek kísérik az útvonalat. "
+        "A híd fa korlátot, a torony külön textúrázott építményt kapott.\n\n"
+        "Easy 22, Normal 23, Hard 20 valódi ütköző akadálycsoportot tartalmaz. "
+        "A későbbi pihenőszakaszok eleje 18 méteren szabad, a végükben legfeljebb "
+        "egy alacsony padakadály lehet. Az első 100 méter íjászok utáni pihenője, "
+        "a checkpointok, a teljes boss-felvezetés és a végső kapu előtti tér szabad marad. "
+        "Az aréna két alacsony kőakadállyal egészül ki.\n\n"
+        "A statikus díszleteket szegmensenként közös mesh-csoportokba rendezzük. "
+        "A CI ellenőrzi a teljes útvonalat mindhárom nehézségen, a pálya minden "
+        "harmadának akadályait és grafikáját, valamint a harcot és a mobil HUD-ot. "
+        "A további kilenc pálya saját mockup-alapú környezetének terve a "
+        "docs/BIOME_ASSET_REUSE.md fájlban szerepel.\n\n"
+        "A nyitószakasz kőpillérei és előtéri kőelemei mockup-alapú AI mészkő "
+        "színtextúra-próbát kaptak. Az eredeti/AI összehasonlító képek mellékelve. "
+        "Beépített képgenerálással készült; Meshy/Substance nem futott. "
+        "Telefonos megjelenés és teljesítménymérés továbbra is szükséges.\n\n"
+        f"Commit: {os.environ['GITHUB_SHA']}\n"
+    )
+elif release_version == "0.2.3":
     for name in ["first100_00.png", "first100_02.png", "first100_04.png", "first100_wide.png"]:
         shutil.copyfile(root / "previews" / name, out / name)
     notes = (

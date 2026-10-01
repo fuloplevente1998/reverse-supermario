@@ -3,7 +3,7 @@ extends RefCounted
 const Art = preload("res://scripts/art.gd")
 const Enemy = preload("res://scripts/enemy.gd")
 const Hazard = preload("res://scripts/stage_hazard.gd")
-const First100 = preload("res://scripts/generation/courtyard_first100.gd")
+const Kit = preload("res://scripts/generation/courtyard_asset_kit.gd")
 const WorldScenery = preload("res://scripts/world_scenery.gd")
 const PlanGenerator = preload("res://scripts/generation/stage_plan_generator.gd")
 const EncounterDirector = preload("res://scripts/generation/encounter_director.gd")
@@ -71,8 +71,9 @@ static func build(game: Node3D) -> void:
     game.set_meta("side_course_end_z", course_end)
     game.set_meta("stage_seed", int(plan["seed"]))
     game.set_meta("stage_biome", str(plan["biome"]))
-    game.set_meta("first100_obstacles", First100.obstacle_specs(game.difficulty_index, plan))
-    game.set_meta("first100_range", Vector2(First100.START, First100.END))
+    game.set_meta("first100_obstacles", Kit.opening_obstacle_specs(game.difficulty_index, plan))
+    game.set_meta("courtyard_obstacles", Kit.obstacle_specs(game.difficulty_index, plan))
+    game.set_meta("first100_range", Vector2(Kit.START, Kit.SAMPLE_END))
     game.set_meta("side_reference_layers", 3)
 
     var mortar := Art.material(Color("#807057"))
@@ -122,6 +123,7 @@ static func _build_segment_geometry(stage_root: Node3D, game: Node3D, segment: D
     for key in ["id", "kind", "length", "variant_seed", "safe_recovery", "boss_approach"]:
         if segment.has(key):
             segment_root.set_meta("segment_id" if key == "id" else key, segment[key])
+    segment_root.set_meta("recovery_clear_length", Kit.recovery_length(segment))
     stage_root.add_child(segment_root)
     var id := str(segment["id"])
     var length := float(segment["length"])
@@ -146,7 +148,7 @@ static func _build_segment_geometry(stage_root: Node3D, game: Node3D, segment: D
         var points: Array[Vector2] = segment["terrain_points"]
         for i in range(points.size() - 1):
             spans.append(Vector4(points[i].x, points[i + 1].x, points[i].y, points[i + 1].y))
-    var first_gap := First100.gap_for(game.difficulty_index)
+    var first_gap := Kit.gap_for(game.difficulty_index)
     var local_gap := first_gap - Vector2.ONE * segment_root.position.z
     if first_gap != Vector2.ZERO and local_gap.x < length and local_gap.y > 0:
         spans = _cut_spans(spans, local_gap)
@@ -157,43 +159,19 @@ static func _build_segment_geometry(stage_root: Node3D, game: Node3D, segment: D
     var art_width := float(DifficultyProfiles.get_profile(game.difficulty_index)["bridge_width"]) if id == "bridge" else COURSE_WIDTH
     CourseArt.dress_segment(segment_root, segment, spans, art_width)
     var ground_query := func(z: float) -> float: return height_at(game.difficulty_index, z)
-    First100.dress(segment_root, spans, ground_query)
-    var opening_obstacles: Array[Dictionary] = game.get_meta("first100_obstacles")
-    First100.build_obstacles(segment_root, opening_obstacles, segment_root.position.z, length, ground_query, hurdles)
+    Kit.dress(segment_root, spans, ground_query)
+    var obstacles: Array[Dictionary] = game.get_meta("courtyard_obstacles")
+    Kit.build_obstacles(segment_root, obstacles, segment_root.position.z, length, ground_query, hurdles)
     if id == "bridge":
         for span: Vector4 in spans:
-            for side in [-1.0, 1.0]:
-                Art.box(segment_root, Vector3(0.12, 0.5, span.y - span.x), Vector3(side * art_width * 0.5, 0.25, (span.x + span.y) * 0.5), trim)
+            var cursor := span.x
+            while cursor < span.y - 0.01:
+                var piece := minf(2.0, span.y - cursor)
+                for side in [-1.0, 1.0]:
+                    Kit.place(segment_root, "fence", Vector3(side * art_width * 0.5, -0.01, cursor + piece * 0.5), Vector3(piece, 0.55, 0.14), -PI * 0.5)
+                cursor += piece
     elif id == "hazard":
         _hazard_ground_marker(segment_root, length, hazard_mat)
-    # Checkpoints, hazard recovery and the full boss approach stay clear.
-    var clear := bool(segment.get("safe_recovery", false)) or bool(segment.get("boss_approach", false))
-    var obstacle_offsets: Array[float] = []
-    if id == "start":
-        obstacle_offsets = [15.0]
-    elif length >= 16.0 and not clear and id in ["traversal", "stairs", "tower", "gate_approach", "combat_small"]:
-        if length >= 32.0:
-            obstacle_offsets.append(length * 0.34)
-            obstacle_offsets.append(length * 0.72)
-        else:
-            obstacle_offsets.append(length * 0.5)
-    for offset: float in obstacle_offsets:
-        var global_z := segment_root.position.z + offset
-        if global_z < First100.END: continue
-        var height: float = [0.65, 0.85, 1.05][game.difficulty_index]
-        var ground := height_at(game.difficulty_index, global_z)
-        var body := StaticBody3D.new()
-        body.name = "CourtyardHurdle%d" % int(global_z)
-        body.position = Vector3(0, ground + height * 0.5, offset)
-        var dimensions := Vector3(COURSE_WIDTH, height, 1.25)
-        var collision := CollisionShape3D.new()
-        var shape := BoxShape3D.new()
-        shape.size = dimensions
-        collision.shape = shape
-        body.add_child(collision)
-        CourseArt.obstacle_visual(body, dimensions)
-        segment_root.add_child(body)
-        hurdles.append(global_z)
 
 static func _cut_spans(spans: Array[Vector4], gap: Vector2) -> Array[Vector4]:
     var result: Array[Vector4] = []

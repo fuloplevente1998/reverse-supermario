@@ -27,7 +27,7 @@ func _verify() -> void:
     var total_plans := 0
 
     for stage_number in range(1, 11):
-        var spec := StageCatalog.get_stage(stage_number)
+        var spec: Dictionary = StageCatalog.get_stage(stage_number)
         names[StageCatalog.title(stage_number)] = true
         biomes[spec["biome"]] = true
 

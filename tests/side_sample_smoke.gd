@@ -22,9 +22,10 @@ func _verify() -> void:
     assert(sample.find_child("SampleCypress_*", true, false) is Node3D)
     assert(sample.get_node("ReferenceBrazierA/WarmFireLight") is OmniLight3D)
     assert(sample.get_node("ReferenceBrazierB/WarmFireLight") is OmniLight3D)
-    var terrain = stage.get_node("SideTerrain0").get_child(1)
-    var normals: PackedVector3Array = terrain.mesh.surface_get_arrays(0)[Mesh.ARRAY_NORMAL]
-    assert(normals[0].x < -0.99 and normals[12].y > 0.99,"Terrain normals must point toward camera and sky")
+    assert(stage.get_node("GeneratedLongStage") is Node3D)
+    assert(float(stage.get_meta("side_course_length"))>=700.0 and float(stage.get_meta("side_course_length"))<=800.0)
+    var first_segment := stage.get_node("GeneratedLongStage").get_child(0)
+    assert(first_segment.get_node_or_null("Floor") is StaticBody3D, "Generated opening segment needs physical floor")
     assert(sample.get_node("WalkwayPaving").multimesh.instance_count==68)
     var guard = stage.get_node("Guard_8")
     assert(guard.get_meta("detailed_side_guard",false))
@@ -75,7 +76,6 @@ func _verify() -> void:
     assert(not stage.player.touch_block and block.pointer==-1,"Outside release stuck")
     stick.pressed=false
     joystick._input(stick)
-    # Use the real attack selection, range, HP and defeat path against the guard.
     stage.player.set_physics_process(false)
     for enemy in get_nodes_in_group("enemies"):
         enemy.set_physics_process(false)
@@ -92,7 +92,7 @@ func _verify() -> void:
     stage.player.attack()
     await create_timer(0.5).timeout
     assert(stage.enemies_defeated>0,"Detailed guard defeat path failed")
-    print("SIDE_SAMPLE_SMOKE_OK: warm battlement arcade, masonry depth, authored cypress/braziers, larger hero/guard silhouettes, HUD safe area, multitouch and actual combat defeat")
+    print("SIDE_SAMPLE_SMOKE_OK: reference art retained on generated 700-800m Stage 1, detailed guard, HUD safe area, multitouch and combat")
     stage.queue_free()
     await process_frame
     quit(0)

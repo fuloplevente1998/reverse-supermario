@@ -38,5 +38,5 @@ public:
     int32 Seed = 1001;
 
     UFUNCTION(BlueprintCallable, Category="Reverse Platformer|Segment")
-    void RebuildSegment();
+    virtual void RebuildSegment();
 };

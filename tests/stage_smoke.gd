@@ -69,7 +69,7 @@ func _verify() -> void:
             if not _check(stage.get_node_or_null("Checkpoint") != null, "Checkpoint missing"):
                 return
             # Verify physical outer walls using ray hits, not just node names.
-            var end_z: float = stage.StageGenerator.end_z(number)
+            var end_z: float = stage.StageGenerator.end_z(number, difficulty)
             var rays := [Vector3(-30,8,15), Vector3(30,8,15), Vector3(0,8,-25), Vector3(0,8,end_z+10)]
             var names := ["BoundaryWest","BoundaryEast","BoundaryRear","BoundaryFront"]
             for i in range(4):
@@ -86,6 +86,11 @@ func _verify() -> void:
                     if child is StaticBody3D or child is AnimatableBody3D:
                         signature += str(child.position) + str(child.get_class())
                 layouts[signature] = true
+            elif number == 1:
+                if not _check(stage.enemies_total >= int(easy_counts[number]), "Generated Stage 1 difficulty reduced encounters unexpectedly"):
+                    return
+                if difficulty == 2 and not _check(stage.enemies_total > int(easy_counts[number]), "Hard generated Stage 1 must add encounter pressure"):
+                    return
             elif not _check(stage.enemies_total == int(easy_counts[number]) + difficulty, "Difficulty did not change encounters"):
                 return
             if number == 2 and difficulty == 1:

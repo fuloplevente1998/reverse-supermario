@@ -4,6 +4,7 @@
 #include "Components/InputComponent.h"
 #include "Camera/RPCameraModeComponent.h"
 #include "Combat/RPHealthComponent.h"
+#include "Combat/RPMeleeCombatComponent.h"
 #include "Game/RPRespawnSubsystem.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/PlayerController.h"
@@ -29,6 +30,7 @@ ARPPlayerCharacter::ARPPlayerCharacter()
 
     CameraMode = CreateDefaultSubobject<URPCameraModeComponent>(TEXT("CameraMode"));
     Health = CreateDefaultSubobject<URPHealthComponent>(TEXT("Health"));
+    MeleeCombat = CreateDefaultSubobject<URPMeleeCombatComponent>(TEXT("MeleeCombat"));
 }
 
 void ARPPlayerCharacter::BeginPlay()
@@ -116,24 +118,30 @@ void ARPPlayerCharacter::LookUp(const float Value)
 
 void ARPPlayerCharacter::Attack()
 {
-    OnAttackRequested();
+    if (MeleeCombat && MeleeCombat->TryAttack())
+    {
+        OnAttackRequested();
+    }
 }
 
 void ARPPlayerCharacter::StartBlock()
 {
     bBlocking = true;
+    if (MeleeCombat) MeleeCombat->SetBlocking(true);
     OnBlockChanged(true);
 }
 
 void ARPPlayerCharacter::StopBlock()
 {
     bBlocking = false;
+    if (MeleeCombat) MeleeCombat->SetBlocking(false);
     OnBlockChanged(false);
 }
 
 void ARPPlayerCharacter::HandleDeath()
 {
     bBlocking = false;
+    if (MeleeCombat) MeleeCombat->SetBlocking(false);
 
     bool bRespawned = false;
     if (UWorld* World = GetWorld())

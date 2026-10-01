@@ -3,6 +3,8 @@
 #include "Camera/CameraComponent.h"
 #include "Components/InputComponent.h"
 #include "Camera/RPCameraModeComponent.h"
+#include "Combat/RPHealthComponent.h"
+#include "Game/RPRespawnSubsystem.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/SpringArmComponent.h"
@@ -26,6 +28,14 @@ ARPPlayerCharacter::ARPPlayerCharacter()
     FollowCamera->bUsePawnControlRotation = false;
 
     CameraMode = CreateDefaultSubobject<URPCameraModeComponent>(TEXT("CameraMode"));
+    Health = CreateDefaultSubobject<URPHealthComponent>(TEXT("Health"));
+}
+
+void ARPPlayerCharacter::BeginPlay()
+{
+    Super::BeginPlay();
+    InitialSpawnTransform = GetActorTransform();
+    Health->OnDeath.AddDynamic(this, &ARPPlayerCharacter::HandleDeath);
 }
 
 void ARPPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -100,12 +110,36 @@ void ARPPlayerCharacter::Attack()
 
 void ARPPlayerCharacter::StartBlock()
 {
+    bBlocking = true;
     OnBlockChanged(true);
 }
 
 void ARPPlayerCharacter::StopBlock()
 {
+    bBlocking = false;
     OnBlockChanged(false);
+}
+
+void ARPPlayerCharacter::HandleDeath()
+{
+    bBlocking = false;
+
+    bool bRespawned = false;
+    if (UWorld* World = GetWorld())
+    {
+        if (URPRespawnSubsystem* Respawn = World->GetSubsystem<URPRespawnSubsystem>())
+        {
+            bRespawned = Respawn->RespawnPawn(this);
+        }
+    }
+
+    if (!bRespawned)
+    {
+        SetActorTransform(InitialSpawnTransform, false, nullptr, ETeleportType::TeleportPhysics);
+    }
+
+    GetCharacterMovement()->StopMovementImmediately();
+    Health->ResetHealth();
 }
 
 void ARPPlayerCharacter::ToggleView()

@@ -138,7 +138,7 @@ jobs:
         shell: bash
         run: |
           GODOT="$(find "$HOME/.local/share/godot/godot_executable" -maxdepth 1 -type f -name 'Godot*_linux.x86_64' -print -quit)"
-          for TEST in generator_rebuild_smoke runtime_generator_smoke knight_model_smoke world_art_smoke side_view_smoke first_course_smoke side_sample_smoke; do
+          for TEST in generator_rebuild_smoke runtime_generator_smoke encounter_streaming_smoke knight_model_smoke world_art_smoke side_view_smoke first_course_smoke side_sample_smoke; do
             timeout 120s "$GODOT" --headless --audio-driver Dummy --path . --script "res://tests/$TEST.gd" 2>&1 | tee "$TEST.log"
             if grep -E 'SCRIPT ERROR|ERROR:' "$TEST.log"; then exit 1; fi
             grep -q '_SMOKE_OK' "$TEST.log"
@@ -200,6 +200,7 @@ jobs:
             side_sample_smoke.log
             generator_rebuild_smoke.log
             runtime_generator_smoke.log
+            encounter_streaming_smoke.log
             preview.log
           if-no-files-found: warn
           retention-days: 14

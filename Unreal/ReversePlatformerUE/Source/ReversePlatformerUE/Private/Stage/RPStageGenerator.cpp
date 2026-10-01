@@ -2,6 +2,8 @@
 
 #include "Components/SceneComponent.h"
 #include "Engine/World.h"
+#include "GameFramework/Pawn.h"
+#include "Kismet/GameplayStatics.h"
 #include "Stage/RPStageCatalog.h"
 #include "Stage/RPStageDefinition.h"
 #include "Stage/RPStageSegmentDefinition.h"
@@ -9,7 +11,8 @@
 
 ARPStageGenerator::ARPStageGenerator()
 {
-    PrimaryActorTick.bCanEverTick = false;
+    PrimaryActorTick.bCanEverTick = true;
+    PrimaryActorTick.TickInterval = 0.25f;
     SceneRoot = CreateDefaultSubobject<USceneComponent>(TEXT("Root"));
     SetRootComponent(SceneRoot);
 }
@@ -24,6 +27,16 @@ void ARPStageGenerator::BeginPlay()
     }
 }
 
+void ARPStageGenerator::Tick(const float DeltaSeconds)
+{
+    Super::Tick(DeltaSeconds);
+
+    if (bUseSegmentStreaming && bSpawnSegmentActors && GeneratedSegments.Num() > 0)
+    {
+        RefreshStreaming(false);
+    }
+}
+
 void ARPStageGenerator::ClearGeneratedStage()
 {
     for (AActor* Actor : SpawnedSegmentActors)
@@ -35,8 +48,10 @@ void ARPStageGenerator::ClearGeneratedStage()
     }
 
     SpawnedSegmentActors.Reset();
+    LiveSegmentActors.Reset();
     GeneratedSegments.Reset();
     GeneratedLengthMeters = 0.0f;
+    LastStreamingCenterMeters = -100000.0f;
 }
 
 float ARPStageGenerator::ResolveTargetLength(FRandomStream& Random, const FRPStageSpec& Spec) const
@@ -108,46 +123,18 @@ ERPStageSegmentType ARPStageGenerator::ChooseBodySegmentType(
     const FRPStageSpec& Spec,
     const int32 SegmentIndex) const
 {
-    // Deterministic grammar: combat/traversal remain the backbone while biome
-    // identity is expressed by authored segment definitions and environment assets.
-    if (SegmentIndex % 7 == 5)
-    {
-        return ERPStageSegmentType::Vista;
-    }
-    if (SegmentIndex % 6 == 3)
-    {
-        return ERPStageSegmentType::Bridge;
-    }
-    if (SegmentIndex % 5 == 4)
-    {
-        return ERPStageSegmentType::Hazard;
-    }
-    if (SegmentIndex % 4 == 2)
-    {
-        return ERPStageSegmentType::CombatLarge;
-    }
+    // A readable authored rhythm comes before unrestricted randomness.
+    if (SegmentIndex % 7 == 5) return ERPStageSegmentType::Vista;
+    if (SegmentIndex % 6 == 3) return ERPStageSegmentType::Bridge;
+    if (SegmentIndex % 5 == 4) return ERPStageSegmentType::Hazard;
+    if (SegmentIndex % 4 == 2) return ERPStageSegmentType::CombatLarge;
 
     const float Roll = Random.FRand();
-    if (Roll < 0.26f)
-    {
-        return ERPStageSegmentType::CombatSmall;
-    }
-    if (Roll < 0.40f && Spec.BridgeCount > 0)
-    {
-        return ERPStageSegmentType::Bridge;
-    }
-    if (Roll < 0.52f && Spec.HazardCount > 0)
-    {
-        return ERPStageSegmentType::Hazard;
-    }
-    if (Roll < 0.64f)
-    {
-        return ERPStageSegmentType::Stairs;
-    }
-    if (Roll < 0.74f)
-    {
-        return ERPStageSegmentType::Tower;
-    }
+    if (Roll < 0.26f) return ERPStageSegmentType::CombatSmall;
+    if (Roll < 0.40f && Spec.BridgeCount > 0) return ERPStageSegmentType::Bridge;
+    if (Roll < 0.52f && Spec.HazardCount > 0) return ERPStageSegmentType::Hazard;
+    if (Roll < 0.64f) return ERPStageSegmentType::Stairs;
+    if (Roll < 0.74f) return ERPStageSegmentType::Tower;
     return ERPStageSegmentType::Traversal;
 }
 
@@ -156,20 +143,25 @@ void ARPStageGenerator::AddSegment(
     const float LengthMeters,
     const int32 Seed,
     const float StartMeter,
-    FRandomStream& Random)
+    FRandomStream&)
 {
     FRPGeneratedSegment& Segment = GeneratedSegments.AddDefaulted_GetRef();
     Segment.Type = Type;
     Segment.StartMeter = StartMeter;
     Segment.LengthMeters = LengthMeters;
     Segment.Seed = Seed;
+}
 
-    if (!bSpawnSegmentActors)
+void ARPStageGenerator::SpawnSegmentActor(const int32 SegmentIndex)
+{
+    if (!bSpawnSegmentActors || !GeneratedSegments.IsValidIndex(SegmentIndex) || LiveSegmentActors.Contains(SegmentIndex))
     {
         return;
     }
 
-    URPStageSegmentDefinition* Definition = ChooseDefinition(Type, Random);
+    const FRPGeneratedSegment& Segment = GeneratedSegments[SegmentIndex];
+    FRandomStream SegmentRandom(Segment.Seed);
+    URPStageSegmentDefinition* Definition = ChooseDefinition(Segment.Type, SegmentRandom);
     if (!Definition || !Definition->SegmentActorClass)
     {
         return;
@@ -179,31 +171,84 @@ void ARPStageGenerator::AddSegment(
     Params.Owner = this;
     Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 
-    const FVector Location = GetActorLocation() + FVector((StartMeter + LengthMeters * 0.5f) * 100.0f, 0.0f, 0.0f);
+    const FVector Location = GetActorLocation()
+        + FVector((Segment.StartMeter + Segment.LengthMeters * 0.5f) * 100.0f, 0.0f, 0.0f);
+
     AActor* SegmentActor = GetWorld()->SpawnActor<AActor>(
         Definition->SegmentActorClass,
         Location,
         GetActorRotation(),
         Params);
 
-    if (SegmentActor)
+    if (!SegmentActor)
     {
-        SegmentActor->Tags.Add(FName(TEXT("GeneratedStageSegment")));
-        SegmentActor->Tags.Add(FName(*UEnum::GetValueAsString(Type)));
+        return;
+    }
 
-        if (ARPStageSegmentActor* ModularSegment = Cast<ARPStageSegmentActor>(SegmentActor))
+    SegmentActor->Tags.Add(FName(TEXT("GeneratedStageSegment")));
+    SegmentActor->Tags.Add(FName(*UEnum::GetValueAsString(Segment.Type)));
+
+    if (ARPStageSegmentActor* ModularSegment = Cast<ARPStageSegmentActor>(SegmentActor))
+    {
+        ModularSegment->SegmentType = Segment.Type;
+        ModularSegment->LengthMeters = Segment.LengthMeters;
+        ModularSegment->Seed = Segment.Seed;
+        if (StageDefinition)
         {
-            ModularSegment->SegmentType = Type;
-            ModularSegment->LengthMeters = LengthMeters;
-            ModularSegment->Seed = Seed;
-            if (StageDefinition)
-            {
-                ModularSegment->Palette = StageDefinition->EnvironmentPalette;
-            }
-            ModularSegment->RebuildSegment();
+            ModularSegment->Palette = StageDefinition->EnvironmentPalette;
         }
+        ModularSegment->RebuildSegment();
+    }
 
-        SpawnedSegmentActors.Add(SegmentActor);
+    SpawnedSegmentActors.Add(SegmentActor);
+    LiveSegmentActors.Add(SegmentIndex, SegmentActor);
+}
+
+void ARPStageGenerator::DestroySegmentActor(const int32 SegmentIndex)
+{
+    if (TObjectPtr<AActor>* Found = LiveSegmentActors.Find(SegmentIndex))
+    {
+        AActor* Actor = Found->Get();
+        if (IsValid(Actor))
+        {
+            SpawnedSegmentActors.Remove(Actor);
+            Actor->Destroy();
+        }
+        LiveSegmentActors.Remove(SegmentIndex);
+    }
+}
+
+void ARPStageGenerator::RefreshStreaming(const bool bForce)
+{
+    float CenterMeters = 0.0f;
+    if (const APawn* Player = UGameplayStatics::GetPlayerPawn(this, 0))
+    {
+        CenterMeters = (Player->GetActorLocation().X - GetActorLocation().X) / 100.0f;
+    }
+
+    if (!bForce && FMath::Abs(CenterMeters - LastStreamingCenterMeters) < 12.0f)
+    {
+        return;
+    }
+    LastStreamingCenterMeters = CenterMeters;
+
+    const float MinVisible = bUseSegmentStreaming ? CenterMeters - StreamingBehindMeters : -BIG_NUMBER;
+    const float MaxVisible = bUseSegmentStreaming ? CenterMeters + StreamingAheadMeters : BIG_NUMBER;
+
+    for (int32 Index = 0; Index < GeneratedSegments.Num(); ++Index)
+    {
+        const FRPGeneratedSegment& Segment = GeneratedSegments[Index];
+        const float SegmentEnd = Segment.StartMeter + Segment.LengthMeters;
+        const bool bNeeded = SegmentEnd >= MinVisible && Segment.StartMeter <= MaxVisible;
+
+        if (bNeeded)
+        {
+            SpawnSegmentActor(Index);
+        }
+        else
+        {
+            DestroySegmentActor(Index);
+        }
     }
 }
 
@@ -238,12 +283,14 @@ void ARPStageGenerator::GenerateStage()
             Type = ChooseBodySegmentType(Random, Spec, SegmentIndex);
         }
 
-        URPStageSegmentDefinition* Definition = ChooseDefinition(Type, Random);
+        FRandomStream PreviewRandom(Random.RandHelper(MAX_int32));
+        URPStageSegmentDefinition* Definition = ChooseDefinition(Type, PreviewRandom);
         const float BaseLength = Definition ? Definition->LengthMeters : Random.FRandRange(32.0f, 58.0f);
         const float Remaining = TargetLength - ReservedEnding - Cursor;
         const float Length = FMath::Clamp(BaseLength, 18.0f, FMath::Max(18.0f, Remaining));
+        const int32 SegmentSeed = Random.RandHelper(MAX_int32);
 
-        AddSegment(Type, Length, Random.RandHelper(MAX_int32), Cursor, Random);
+        AddSegment(Type, Length, SegmentSeed, Cursor, Random);
         Cursor += Length;
         ++SegmentIndex;
 
@@ -262,6 +309,7 @@ void ARPStageGenerator::GenerateStage()
     Cursor += FinishLength;
 
     GeneratedLengthMeters = Cursor;
+    RefreshStreaming(true);
 
     UE_LOG(LogTemp, Log, TEXT("Generated stage %d: %.1f m, %d segments, difficulty %d, seed %d"),
         static_cast<int32>(StageId),

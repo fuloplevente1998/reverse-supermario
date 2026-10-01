@@ -3,6 +3,7 @@ extends Node3D
 @export_range(1, 10) var stage_number := 1
 const StageTwo = preload("res://scripts/stage_two.gd")
 const StageGenerator = preload("res://scripts/stage_generator.gd")
+const DifficultyProfiles = preload("res://scripts/generation/difficulty_profiles.gd")
 const SAVE_PATH := "user://reverse_platformer_progress.cfg"
 
 @onready var player = $Player
@@ -110,6 +111,9 @@ func _recover_water() -> void:
 func _on_checkpoint_entered(body: Node3D, spawn: Vector3 = Vector3(0, 1.1, 16.0)) -> void:
     if body == player and not ended and spawn.z > checkpoint_position.z:
         checkpoint_position = spawn
+        if bool(get_meta("generator_rebuild", false)):
+            var profile: Dictionary = DifficultyProfiles.get_profile(difficulty_index)
+            player.heal(roundi(20.0 * float(profile["healing_multiplier"])))
         _pulse_status("ELLENŐRZŐPONT AKTÍV")
 
 func side_ground_height(z: float) -> float:
@@ -424,19 +428,16 @@ func _load_difficulty() -> void:
     difficulty_index = clampi(int(progress.get_value("progress", "difficulty", 1)), 0, 2)
 
 func _apply_difficulty() -> void:
-    var player_health := [120, 100, 80]
-    var enemy_health := [0.75, 1.0, 1.3]
-    var enemy_damage := [0.7, 1.0, 1.4]
-    player.max_hp = player_health[difficulty_index]
+    var profile: Dictionary = DifficultyProfiles.get_profile(difficulty_index)
+    player.max_hp = int(profile["player_health"])
     player.hp = player.max_hp
     for enemy in get_tree().get_nodes_in_group("enemies"):
-        enemy.max_hp = maxi(1, roundi(enemy.max_hp * enemy_health[difficulty_index]))
-        enemy.hp = enemy.max_hp
-        enemy.damage = maxi(1, roundi(enemy.damage * enemy_damage[difficulty_index]))
-        enemy.move_speed *= [0.85, 1.0, 1.12][difficulty_index]
+        if is_ancestor_of(enemy):
+            enemy.apply_difficulty(profile)
 
 func _hazard_damage(amount: int) -> int:
-    return maxi(1, roundi(amount * [0.75, 1.0, 1.3][difficulty_index]))
+    var profile: Dictionary = DifficultyProfiles.get_profile(difficulty_index)
+    return maxi(1, roundi(amount * float(profile["hazard_damage_multiplier"])))
 
 func _build_stage_panel() -> void:
     stage_panel = Control.new()

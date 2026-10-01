@@ -18,6 +18,10 @@ func _check(condition: bool, message: String) -> bool:
         return false
     return true
 
+func _safe(segment: Dictionary) -> bool:
+    var id := str(segment["id"])
+    return (id in SAFE_RECOVERY or str(segment["kind"]) == "vista" or id == "gate_approach") and id not in BRIDGE_LIKE
+
 func _verify() -> void:
     var stage1_signatures: Array[String] = []
 
@@ -54,14 +58,20 @@ func _verify() -> void:
                     if not _check(false, "Consecutive major combats at stage %d difficulty %d" % [stage_number, difficulty]):
                         return
 
+                if current_id == "checkpoint":
+                    if not _check(_safe(previous), "Checkpoint has no safe approach"):
+                        return
+                if current_id == "mini_boss":
+                    if not _check(_safe(previous) and float(previous["length"]) >= 38.0, "Mini-boss lacks a full safe approach"):
+                        return
                 if previous_id == "checkpoint":
-                    if not _check(current_id in SAFE_RECOVERY and current_id not in BRIDGE_LIKE, "Checkpoint lacks safe recovery at stage %d difficulty %d" % [stage_number, difficulty]):
+                    if not _check(_safe(current), "Checkpoint lacks safe recovery at stage %d difficulty %d" % [stage_number, difficulty]):
                         return
 
                 var requires_recovery := previous_kind == "hazard" or previous_id in BRIDGE_LIKE or previous_id in BIG_COMBAT
                 var hard_archer_exception := difficulty == 2 and progress > 0.55 and current_id == "archer_ambush" and previous_kind != "combat"
                 if requires_recovery and not hard_archer_exception:
-                    if not _check(current_id in SAFE_RECOVERY and current_id not in BRIDGE_LIKE, "Unsafe segment order %s -> %s at stage %d difficulty %d" % [previous_id, current_id, stage_number, difficulty]):
+                    if not _check(_safe(current), "Unsafe segment order %s -> %s at stage %d difficulty %d" % [previous_id, current_id, stage_number, difficulty]):
                         return
 
             for signature_segment in spec["signature_segments"]:
@@ -73,10 +83,52 @@ func _verify() -> void:
                 if not _check(found, "Stage %d lost signature segment %s" % [stage_number, signature_segment]):
                     return
 
+    var checked_seeds := 0
+    for stage_number in range(1, 11):
+        var spec: Dictionary = StageCatalog.get_stage(stage_number)
+        for difficulty in range(3):
+            for seed_index in range(64):
+                var plan: Dictionary = PlanGenerator.generate(stage_number, difficulty, 424242 + seed_index * 7919 + stage_number * 100)
+                checked_seeds += 1
+                if not _check(is_equal_approx(float(plan["total_length"]), float(plan["target_length"])), "Seed sweep changed requested course length"):
+                    return
+                var cursor := 0.0
+                var ids := {}
+                var checkpoint_count := 0
+                var segments: Array = plan["segments"]
+                for i in range(segments.size()):
+                    var segment: Dictionary = segments[i]
+                    var id := str(segment["id"])
+                    ids[id] = true
+                    if not _check(is_equal_approx(cursor, float(segment["start"])) and float(segment["length"]) > 0.0, "Generated segments overlap or leave a hole"):
+                        return
+                    cursor = float(segment["end"])
+                    if id in spec["signature_segments"]:
+                        if not _check(is_equal_approx(float(segment["length"]), SegmentCatalog.length(id)), "A landmark was shortened to fit"):
+                            return
+                    if i > 0:
+                        var previous: Dictionary = segments[i - 1]
+                        if id == "checkpoint":
+                            checkpoint_count += 1
+                            if not _check(_safe(previous) and i + 1 < segments.size() and _safe(segments[i + 1]), "Unsafe checkpoint in seed sweep"):
+                                return
+                        if id == "mini_boss":
+                            if not _check(_safe(previous) and float(previous["length"]) >= 38.0, "Unsafe boss approach in seed sweep"):
+                                return
+                        if (str(previous["kind"]) == "hazard" or str(previous["id"]) in BRIDGE_LIKE or str(previous["id"]) in BIG_COMBAT) and not _safe(segment):
+                            if not _check(false, "Missing recovery in seed sweep"):
+                                return
+                for required in spec["signature_segments"]:
+                    if not _check(ids.has(str(required)), "Seed sweep lost landmark %s" % required):
+                        return
+                if stage_number == 1:
+                    if not _check(checkpoint_count >= [5, 4, 3][difficulty], "Stage 1 seed lost difficulty-scaled checkpoints"):
+                        return
+
     if not _check(stage1_signatures.size() == 3, "Missing Stage 1 difficulty layouts"):
         return
     if not _check(stage1_signatures[0] != stage1_signatures[1] and stage1_signatures[1] != stage1_signatures[2] and stage1_signatures[0] != stage1_signatures[2], "Stage 1 geometry should be difficulty-aware"):
         return
 
-    print("STAGE_GRAMMAR_SMOKE_OK: 30 long layouts obey recovery, checkpoint, bridge, hazard and major-combat ordering rules; Stage 1 geometry differs by difficulty")
+    print("STAGE_GRAMMAR_SMOKE_OK: 30 default layouts plus %d seeded plans retain full landmarks, safe checkpoints and boss approaches" % checked_seeds)
     quit(0)

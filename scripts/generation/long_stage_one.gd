@@ -8,6 +8,7 @@ const WorldScenery = preload("res://scripts/world_scenery.gd")
 const PlanGenerator = preload("res://scripts/generation/stage_plan_generator.gd")
 const EncounterDirector = preload("res://scripts/generation/encounter_director.gd")
 const SegmentStreamer = preload("res://scripts/generation/segment_streamer.gd")
+const DifficultyProfiles = preload("res://scripts/generation/difficulty_profiles.gd")
 
 const START_Z := -15.0
 const HALF_WIDTH := 2.6
@@ -104,7 +105,7 @@ static func _build_segment_geometry(stage_root: Node3D, game: Node3D, segment: D
         "stairs":
             _stairs(segment_root, length, stone)
         "bridge":
-            _bridge(segment_root, game.difficulty_index, length, stone, trim)
+            _bridge(segment_root, game.difficulty_index, length, stone, trim, gaps)
         "fountain_court":
             _floor(segment_root, length, stone)
             _fountain_marker(segment_root, length, trim)
@@ -145,13 +146,16 @@ static func _build_segment_gameplay(game: Node3D, segment: Dictionary, checkpoin
     var encounter: Array[Dictionary] = EncounterDirector.build_encounter(1, game.difficulty_index, segment)
     for entry: Dictionary in encounter:
         var z := start_z + float(entry["offset_z"])
-        _enemy(game, str(entry["legacy_archetype"]), z, bool(entry["elite"]))
+        var enemy := _enemy(game, str(entry["legacy_archetype"]), z, bool(entry["elite"]))
+        enemy.encounter_health_scale = float(entry["health_scale"])
+        enemy.encounter_damage_scale = float(entry["damage_scale"])
 
 static func _floor(parent: Node3D, length: float, material: Material) -> void:
     _solid(parent, "Floor", Vector3(COURSE_WIDTH, 0.8, length), Vector3(0, -0.4, length * 0.5), material)
 
 static func _real_gap(parent: Node3D, difficulty_index: int, length: float, material: Material, gaps: Array[Vector2]) -> void:
-    var desired_gap: float = [3.0, 4.4, 5.6][difficulty_index]
+    var profile: Dictionary = DifficultyProfiles.get_profile(difficulty_index)
+    var desired_gap: float = float(profile["gap_width"])
     var gap_width: float = minf(desired_gap, maxf(2.6, length * 0.30))
     var ledge_length: float = (length - gap_width) * 0.5
 
@@ -163,14 +167,28 @@ static func _real_gap(parent: Node3D, difficulty_index: int, length: float, mate
     parent.set_meta("gap_start", global_start)
     parent.set_meta("gap_end", global_start + gap_width)
 
-static func _bridge(parent: Node3D, difficulty_index: int, length: float, stone: Material, trim: Material) -> void:
-    # Side view remains traversable while 3D mode gets a narrower bridge on
-    # higher difficulties.
-    var widths: Array[float] = [4.8, 3.9, 3.2]
-    _solid(parent, "BridgeDeck", Vector3(widths[difficulty_index], 0.42, length), Vector3(0, -0.21, length * 0.5), trim)
-    for side: float in [-1.0, 1.0]:
-        var x: float = side * widths[difficulty_index] * 0.5
-        Art.box(parent, Vector3(0.10, 0.55, length), Vector3(x, 0.28, length * 0.5), stone)
+static func _bridge(parent: Node3D, difficulty_index: int, length: float, stone: Material, trim: Material, gaps: Array[Vector2]) -> void:
+    # Two longitudinal breaks and a central landing work in both camera modes.
+    # Hard has longer jumps and a shorter landing, not only a narrower X deck.
+    var profile: Dictionary = DifficultyProfiles.get_profile(difficulty_index)
+    var width := float(profile["bridge_width"])
+    var gap := float(profile["bridge_gap_width"])
+    var landing := float(profile["bridge_landing_length"])
+    var ledge := (length - landing - gap * 2.0) * 0.5
+    assert(ledge >= 5.0)
+    var deck_lengths: Array[float] = [ledge, landing, ledge]
+    var cursor := 0.0
+    for i in range(deck_lengths.size()):
+        var deck_length: float = deck_lengths[i]
+        _solid(parent, "BridgeDeck%d" % i, Vector3(width, 0.42, deck_length), Vector3(0, -0.21, cursor + deck_length * 0.5), trim)
+        for side: float in [-1.0, 1.0]:
+            Art.box(parent, Vector3(0.10, 0.55, deck_length), Vector3(side * width * 0.5, 0.28, cursor + deck_length * 0.5), stone)
+        cursor += deck_length
+        if i < 2:
+            gaps.append(Vector2(parent.position.z + cursor, parent.position.z + cursor + gap))
+            cursor += gap
+    parent.set_meta("bridge_gap_width", gap)
+    parent.set_meta("bridge_landing_length", landing)
 
 static func _stairs(parent: Node3D, length: float, material: Material) -> void:
     var count: int = 8
@@ -224,7 +242,7 @@ static func _solid(parent: Node3D, node_name: String, dimensions: Vector3, at: V
     parent.add_child(body)
     return body
 
-static func _enemy(game: Node3D, kind: String, z: float, elite: bool) -> void:
+static func _enemy(game: Node3D, kind: String, z: float, elite: bool) -> Enemy:
     var enemy := Enemy.new()
     enemy.archetype = kind
     enemy.name = "%s_%d" % [kind.capitalize(), int(z)]
@@ -240,6 +258,7 @@ static func _enemy(game: Node3D, kind: String, z: float, elite: bool) -> void:
     collision.shape = shape
     enemy.add_child(collision)
     game.add_child(enemy)
+    return enemy
 
 static func _hazard(game: Node3D, kind: String, z: float, speed_scale: float, phase_seed: int) -> void:
     var trap := Hazard.new()

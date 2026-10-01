@@ -21,7 +21,7 @@ func _verify() -> void:
             triangles += arrays[Mesh.ARRAY_INDEX].size()/3 if arrays[Mesh.ARRAY_INDEX]!=null else arrays[Mesh.ARRAY_VERTEX].size()/3
     assert(triangles < 80000, "Courtyard runtime is still too heavy")
     assert(stage.get_node_or_null("FortressGateVisual") != null)
-    assert(stage.get_node("CourtyardHurdle0") is StaticBody3D)
+    assert(stage.get_node("GeneratedLongStage").get_child(0).get_node("Floor") is StaticBody3D, "Generated opening lost its physical floor")
     assert(stage.get_node_or_null("SideBackdrop") != null)
     assert(stage.get_node("Player/CameraPivot").camera.cull_mask == 5)
     assert(stage.get_node("Player").model_animation != null)

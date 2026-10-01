@@ -64,9 +64,10 @@ func _verify() -> void:
         assert(camera.camera.projection==Camera3D.PROJECTION_PERSPECTIVE)
         for index in range(enemies.size()):assert(enemies[index].position.x==original_x[index], "3D enemy placement lost")
         if number==1:
-            player.position=Vector3(8,.93,0)
+            # Probe the actual generated floor instead of a removed 240m-map barricade.
+            player.position=Vector3(0,-0.2,-5)
             camera.toggle_view()
-            assert(player.position.y>1.5, "View switch placed player inside the center barricade")
+            assert(player.position.y>=0.92, "View switch placed player inside generated terrain")
         stage.queue_free()
         await process_frame
     print("SIDE_VIEW_SMOKE_OK: ten stages, forward/back only, centered actors, jump, orthographic camera, invisible bounds and safe view switching")

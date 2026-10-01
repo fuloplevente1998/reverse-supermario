@@ -24,7 +24,7 @@ func _verify() -> void:
     assert(sample.get_node("ReferenceBrazierB/WarmFireLight") is OmniLight3D)
     assert(stage.get_node("GeneratedLongStage") is Node3D)
     assert(float(stage.get_meta("side_course_length"))>=700.0 and float(stage.get_meta("side_course_length"))<=800.0)
-    var first_segment := stage.get_node("GeneratedLongStage").get_child(0)
+    var first_segment: Node = stage.get_node("GeneratedLongStage").get_child(0)
     assert(first_segment.get_node_or_null("Floor") is StaticBody3D, "Generated opening segment needs physical floor")
     assert(sample.get_node("WalkwayPaving").multimesh.instance_count==68)
     var guard = stage.get_node("Guard_8")

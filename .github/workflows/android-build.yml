@@ -138,8 +138,8 @@ jobs:
         shell: bash
         run: |
           GODOT="$(find "$HOME/.local/share/godot/godot_executable" -maxdepth 1 -type f -name 'Godot*_linux.x86_64' -print -quit)"
-          for TEST in generator_rebuild_smoke runtime_generator_smoke encounter_streaming_smoke stage_grammar_smoke knight_model_smoke world_art_smoke side_view_smoke first_course_smoke side_sample_smoke; do
-            timeout 120s "$GODOT" --headless --audio-driver Dummy --path . --script "res://tests/$TEST.gd" 2>&1 | tee "$TEST.log"
+          for TEST in generator_rebuild_smoke runtime_generator_smoke encounter_streaming_smoke difficulty_runtime_smoke stage_grammar_smoke knight_model_smoke world_art_smoke side_view_smoke first_course_smoke side_sample_smoke; do
+            timeout 120s "$GODOT" --headless --audio-driver Dummy --path . --fixed-fps 60 --script "res://tests/$TEST.gd" 2>&1 | tee "$TEST.log"
             if grep -E 'SCRIPT ERROR|ERROR:' "$TEST.log"; then exit 1; fi
             grep -q '_SMOKE_OK' "$TEST.log"
           done
@@ -148,7 +148,7 @@ jobs:
         shell: bash
         run: |
           GODOT="$(find "$HOME/.local/share/godot/godot_executable" -maxdepth 1 -type f -name 'Godot*_linux.x86_64' -print -quit)"
-          "$GODOT" --headless --path . --script res://tests/stage_smoke.gd 2>&1 | tee stage-smoke.log
+          "$GODOT" --headless --path . --fixed-fps 60 --script res://tests/stage_smoke.gd 2>&1 | tee stage-smoke.log
           if grep -E 'SCRIPT ERROR|ERROR:' stage-smoke.log; then
             exit 1
           fi
@@ -201,6 +201,7 @@ jobs:
             generator_rebuild_smoke.log
             runtime_generator_smoke.log
             encounter_streaming_smoke.log
+            difficulty_runtime_smoke.log
             stage_grammar_smoke.log
             preview.log
           if-no-files-found: warn
@@ -227,8 +228,8 @@ jobs:
         shell: bash
         run: |
           if [ "$GITHUB_REF_NAME" = "godot/generator-rebuild" ]; then
-            TAG="preview-0.2.0-${BUILD_NUMBER}"
-            TITLE="0.2.0 – generált 700–800 m-es Várudvar"
+            TAG="preview-0.2.1-${BUILD_NUMBER}"
+            TITLE="0.2.1 – javított Várudvar-generátor és nehézség"
           elif [ "$GITHUB_REF_NAME" = "art/side-reference-pass-0.1.9" ]; then
             TAG="preview-0.1.9-${BUILD_NUMBER}"
             TITLE="0.1.9 – referencia-közeli oldalnézeti grafikai pass"

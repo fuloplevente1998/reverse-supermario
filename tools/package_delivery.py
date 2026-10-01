@@ -48,7 +48,20 @@ for name in [
 ]:
     shutil.copyfile(root / "previews" / name, out / name)
 
-if release_version == "0.2.0":
+if release_version == "0.2.1":
+    notes = (
+        "# 0.2.1 – javított Várudvar-generátor és nehézség\n\n"
+        "A kötelező pályarészek és checkpointok helyfoglalása, a mini-boss biztonságos "
+        "felvezetése és az egységes nehézségi profil bekötése javítva. "
+        "Az elit bónuszok aktívak, az új checkpoint egyszer gyógyít, a híd ugrástávja "
+        "és középső landolója oldalnézetben is eltér a három nehézségen.\n\n"
+        "A CI 1920 külön pályaterv-seedet és az első pálya mindhárom teljes "
+        "útvonalát valódi játékosfizikával ellenőrzi. A kilenc további mockup "
+        "saját környezetének és szegmenskészletének megépítése későbbi feladat. "
+        "A hosszú Várudvar végleges grafikája és telefonos ellenőrzése még hátravan.\n\n"
+        f"Commit: {os.environ['GITHUB_SHA']}\n"
+    )
+elif release_version == "0.2.0":
     notes = (
         "# 0.2.0 – generátor-alapú hosszú Várudvar\n\n"
         "Az első pálya már az új Godot generator rebuild runtime-ot használja. "

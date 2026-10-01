@@ -6,7 +6,7 @@ const SegmentCatalog = preload("res://scripts/generation/segment_catalog.gd")
 
 const SAFE_RECOVERY := ["traversal", "vista", "tower", "gate"]
 const BRIDGE_LIKE := ["bridge", "rope_bridge", "stone_bridge", "ice_bridge", "bone_bridge", "broken_bridge", "chain_crossing", "siege_bridge"]
-const BIG_COMBAT := ["combat_large", "archer_ambush", "farmyard", "siege_approach", "crypt_hall", "forest_ambush", "palisade_gate", "fortress_approach", "grand_gate", "final_courtyard", "citadel_approach"]
+const BIG_COMBAT := ["combat_large", "archer_ambush", "farmyard", "siege_approach", "crypt_hall", "forest_ambush", "palisade_gate", "fortress_approach", "grand_gate", "final_courtyard", "citadel_approach", "mini_boss"]
 
 static func generate(stage_number: int, difficulty_index: int = 1, seed_override: int = 0) -> Dictionary:
     var spec: Dictionary = StageCatalog.get_stage(stage_number)
@@ -22,96 +22,79 @@ static func generate(stage_number: int, difficulty_index: int = 1, seed_override
     var target_length: float = rng.randf_range(float(spec["min_length"]), float(spec["max_length"]))
     var segments: Array[Dictionary] = []
     var cursor: float = 0.0
-    var next_checkpoint: float = float(difficulty["checkpoint_interval"])
 
     var start_length: float = SegmentCatalog.length("start")
     cursor = _append_segment(segments, "start", cursor, start_length, rng, spec, difficulty)
 
     var signatures: Array = spec["signature_segments"].duplicate()
     _shuffle(signatures, rng)
-    var signature_total: int = signatures.size()
-    var signature_used: int = 0
-
     var mini_length: float = SegmentCatalog.length("mini_boss")
     var finish_length: float = SegmentCatalog.length("finish")
-    var body_target: float = target_length - mini_length - finish_length
+    var lead_in_length: float = SegmentCatalog.length("traversal")
+    # Checkpoints are mandatory too. Interleave them with the landmarks so
+    # neither can be crowded out by random filler near the end of the course.
+    var checkpoint_count := maxi(1, floori((target_length - mini_length - finish_length) / float(difficulty["checkpoint_interval"])))
+    var body_target: float = target_length - lead_in_length - mini_length - finish_length
+    var mandatory: Array[String] = _mandatory_segments(signatures, checkpoint_count)
+    # Hazard-heavy future biome specs may require more recovery terrain. Keep
+    # all landmarks and reduce checkpoint count only if the skeleton cannot fit.
+    while checkpoint_count > 1 and _remaining_signature_budget(mandatory, "start", difficulty_index) > body_target - cursor:
+        checkpoint_count -= 1
+        mandatory = _mandatory_segments(signatures, checkpoint_count)
+    var mandatory_count: int = mandatory.size()
+    var mandatory_used := 0
     var previous_id: String = "start"
-    var force_safe_next := false
 
-    while cursor < body_target - 18.0:
+    while cursor < body_target - 0.001:
         var remaining: float = body_target - cursor
-
-        var signature_reserve: float = _remaining_signature_budget(signatures)
-
-        # Checkpoints are inserted by distance, but never at the expense of
-        # required biome signature segments. Recovery terrain is inserted first
-        # when required.
-        if cursor >= next_checkpoint and remaining > signature_reserve + SegmentCatalog.length("checkpoint") + 36.0:
-            if not _is_safe_recovery(previous_id) and remaining >= SegmentCatalog.length("traversal") + SegmentCatalog.length("checkpoint") + 18.0:
-                var recovery_length: float = minf(SegmentCatalog.length("traversal"), remaining)
-                cursor = _append_segment(segments, "traversal", cursor, recovery_length, rng, spec, difficulty)
-                previous_id = "traversal"
-                remaining = body_target - cursor
-            if remaining >= 18.0:
-                var checkpoint_length: float = minf(SegmentCatalog.length("checkpoint"), remaining)
-                cursor = _append_segment(segments, "checkpoint", cursor, checkpoint_length, rng, spec, difficulty)
-                previous_id = "checkpoint"
-                force_safe_next = true
-                next_checkpoint += float(difficulty["checkpoint_interval"])
-                continue
-
         var progress: float = clampf(cursor / maxf(body_target, 1.0), 0.0, 1.0)
-        var candidate := ""
+        var reserve: float = _remaining_signature_budget(mandatory, previous_id, difficulty_index)
+        assert(reserve <= remaining + 0.001, "Required segment budget exceeds remaining course")
 
-        # Spread mockup-defining hero moments across the whole course instead
-        # of dumping all signature segments near the start.
-        var signature_threshold: float = 1.0
-        if signature_total > 0 and signature_used < signature_total:
-            signature_threshold = float(signature_used + 1) / float(signature_total + 1)
-
-        if force_safe_next:
-            candidate = "traversal"
-            force_safe_next = false
-        elif not signatures.is_empty() and (progress >= signature_threshold or remaining <= signature_reserve + 36.0):
-            candidate = str(signatures.front())
-            if _allowed_after(previous_id, candidate, difficulty_index, progress):
-                signatures.pop_front()
-                signature_used += 1
-            else:
+        var signature_threshold: float = float(mandatory_used + 1) / float(mandatory_count + 1)
+        var candidate := "traversal"
+        if not mandatory.is_empty() and (progress >= signature_threshold or remaining <= reserve + 42.0):
+            candidate = str(mandatory.front())
+            if not _allowed_after(previous_id, candidate, difficulty_index, progress):
                 candidate = "traversal"
-        else:
+        elif previous_id != "checkpoint" and not _requires_recovery(previous_id):
             candidate = _weighted_pick_allowed(spec["segment_weights"], previous_id, difficulty_index, progress, rng)
 
-        if not _allowed_after(previous_id, candidate, difficulty_index, progress):
-            candidate = "traversal"
+        var pending: Array = mandatory.duplicate()
+        if not pending.is_empty() and candidate == str(pending.front()):
+            pending.pop_front()
+        var variation: float = 1.0 if candidate == "checkpoint" or candidate in spec["signature_segments"] else rng.randf_range(0.90, 1.10)
+        var segment_length: float = SegmentCatalog.length(candidate) * variation
+        var tail_budget: float = _remaining_signature_budget(pending, candidate, difficulty_index)
 
-        var base_length: float = SegmentCatalog.length(candidate)
-        var variation: float = 1.0
-        # Required signature lengths stay exact so the reserved geometry budget
-        # remains deterministic. Filler segments may still vary.
-        if candidate not in ["checkpoint"] and candidate not in spec["signature_segments"]:
-            variation = rng.randf_range(0.90, 1.10)
-        var segment_length: float = minf(base_length * variation, remaining)
-
-        if segment_length < 18.0:
-            break
-
+        # Reject filler that would crowd out any mandatory segment or required
+        # recovery. Only filler may be shortened; signatures retain full length.
+        if segment_length + tail_budget > remaining:
+            if not mandatory.is_empty():
+                candidate = str(mandatory.front())
+                if not _allowed_after(previous_id, candidate, difficulty_index, progress):
+                    candidate = "traversal"
+                pending = mandatory.duplicate()
+                if candidate == str(pending.front()):
+                    pending.pop_front()
+                segment_length = SegmentCatalog.length(candidate)
+                tail_budget = _remaining_signature_budget(pending, candidate, difficulty_index)
+            else:
+                candidate = "traversal"
+                segment_length = remaining
+                tail_budget = 0.0
+        assert(segment_length + tail_budget <= remaining + 0.001, "Candidate consumes required tail budget")
         cursor = _append_segment(segments, candidate, cursor, segment_length, rng, spec, difficulty)
-
-        if _requires_recovery(candidate):
-            force_safe_next = true
+        if not mandatory.is_empty() and candidate == str(mandatory.front()):
+            mandatory.pop_front()
+            mandatory_used += 1
         previous_id = candidate
 
-        if segments.size() > 100:
-            break
-
-    # If a small body remainder exists, fill it with safe traversal so final
-    # course length stays inside the stage definition's requested range.
-    var body_remainder: float = body_target - cursor
-    if body_remainder >= 8.0:
-        cursor = _append_segment(segments, "traversal", cursor, body_remainder, rng, spec, difficulty)
-
+    assert(mandatory.is_empty(), "Missing required landmarks or checkpoints")
+    cursor = _append_segment(segments, "traversal", cursor, lead_in_length, rng, spec, difficulty)
+    assert(_allowed_after("traversal", "mini_boss", difficulty_index, 1.0))
     cursor = _append_segment(segments, "mini_boss", cursor, mini_length, rng, spec, difficulty)
+    assert(_allowed_after("mini_boss", "finish", difficulty_index, 1.0))
     cursor = _append_segment(segments, "finish", cursor, finish_length, rng, spec, difficulty)
 
     return {
@@ -148,16 +131,28 @@ static func _append_segment(segments: Array[Dictionary], segment_id: String, cur
     })
     return cursor + segment_length
 
-static func _remaining_signature_budget(signatures: Array) -> float:
+static func _mandatory_segments(signatures: Array, checkpoint_count: int) -> Array[String]:
+    var result: Array[String] = []
+    var count: int = signatures.size() + checkpoint_count
+    var signature_index := 0
+    for i in range(count):
+        if floori(float(i + 1) * checkpoint_count / count) > floori(float(i) * checkpoint_count / count):
+            result.append("checkpoint")
+        else:
+            result.append(str(signatures[signature_index]))
+            signature_index += 1
+    return result
+
+static func _remaining_signature_budget(signatures: Array, previous_id: String, difficulty_index: int) -> float:
     var total := 0.0
+    var previous := previous_id
     for segment_id in signatures:
-        total += SegmentCatalog.length(str(segment_id))
-    # In the worst case each remaining hero/signature segment needs a safe
-    # traversal before it, plus one final recovery before the mini-boss.
-    # Reserving this up front guarantees that required biome landmarks cannot
-    # be crowded out by random filler or checkpoint insertion.
-    if not signatures.is_empty():
-        total += SegmentCatalog.length("traversal") * float(signatures.size() + 1)
+        var id := str(segment_id)
+        # Use the stricter early-course rules for budgeting even on Hard.
+        if not _allowed_after(previous, id, difficulty_index, 0.0):
+            total += SegmentCatalog.length("traversal")
+        total += SegmentCatalog.length(id)
+        previous = id
     return total
 
 static func _weighted_pick_allowed(weights: Dictionary, previous_id: String, difficulty_index: int, progress: float, rng: RandomNumberGenerator) -> String:
@@ -171,6 +166,8 @@ static func _weighted_pick_allowed(weights: Dictionary, previous_id: String, dif
             continue
 
         var weight := maxi(0, int(weights[key]))
+        if weight == 0:
+            continue
         if difficulty_index == 0 and (SegmentCatalog.kind(id) == "hazard" or id in BIG_COMBAT):
             weight = maxi(1, roundi(weight * 0.55))
         elif difficulty_index == 2 and (SegmentCatalog.kind(id) == "hazard" or id in BIG_COMBAT):
@@ -199,6 +196,15 @@ static func _weighted_pick_allowed(weights: Dictionary, previous_id: String, dif
     return "traversal"
 
 static func _allowed_after(previous_id: String, candidate: String, difficulty_index: int, progress: float) -> bool:
+    if previous_id == "mini_boss" and candidate == "finish":
+        return true
+
+    if candidate == "mini_boss":
+        return _is_safe_recovery(previous_id)
+
+    if candidate == "checkpoint":
+        return _is_safe_recovery(previous_id)
+
     if previous_id == "checkpoint":
         return _is_safe_recovery(candidate)
 
@@ -224,7 +230,7 @@ static func _requires_recovery(segment_id: String) -> bool:
     return SegmentCatalog.kind(segment_id) == "hazard" or segment_id in BRIDGE_LIKE or segment_id in BIG_COMBAT
 
 static func _is_safe_recovery(segment_id: String) -> bool:
-    return segment_id in SAFE_RECOVERY and segment_id not in BRIDGE_LIKE and SegmentCatalog.kind(segment_id) != "hazard"
+    return (segment_id in SAFE_RECOVERY or SegmentCatalog.kind(segment_id) == "vista" or segment_id == "gate_approach") and segment_id not in BRIDGE_LIKE and SegmentCatalog.kind(segment_id) != "hazard"
 
 static func _shuffle(values: Array, rng: RandomNumberGenerator) -> void:
     for i in range(values.size() - 1, 0, -1):

@@ -415,3 +415,45 @@ Alapszabályok:
 - Easy több safe recoveryt, Hard sűrűbb és összetettebb, de teljesíthető kombinációkat enged.
 
 Ez nem fix sorrend, hanem szabályvezérelt generálás.
+
+
+## Stage 1 generator/difficulty javítás — 2026-10-01
+
+Az aktuális runtime-feladat kizárólag **Stage 1 – Várudvar**. A 2–10. pálya
+katalógusbejegyzései tervek: a saját mockupjaik alapján később külön környezet,
+szegmens- és assetkészlet, ellenfél- és veszélyválaszték készül hozzájuk.
+A közös generátor nem jelent azonos biome-ot vagy kész kilenc új pályát.
+
+- A kötelező landmarkok és checkpointok együtt kapnak helyet a pályatervben.
+  A helyfoglalás az átvezető szakaszokat is számolja, a landmarkok teljes
+  hossza megmarad. Random filler csak a fennmaradó keretet használhatja.
+- A mini-boss előtt külön 38 m biztonságos felvezetés van; a lezárás is
+  áthalad a sorrendi ellenőrzésen. A teljes pálya a kisorsolt célhosszra készül.
+- A profil a játékos életét, ellenfél életét/sebzését/mozgását és csapdasebzést
+  egy helyen határozza meg. Az elit 1,25× élet- és 1,15× sebzésbónusza aktív.
+  A szorzók ismételt alkalmazáskor nem halmozódnak.
+- Az első pálya új checkpointjának első aktiválása 20 alapélet ×
+  healing_multiplier gyógyulást ad (Easy 27, Normal 20, Hard 13), maximum
+  a játékos maximális életéig. Ugyanaz a pont nem ad ismét gyógyulást.
+- A híd két valódi, Z irányú ugrásból és középső landolóból áll. Ez oldalnézetben
+  is nehézségkülönbséget ad; a híd X szélessége a 3D-s nézetben is változik.
+
+| Profil | Játékos HP | Ellenfél HP | Ellenfél sebzés | Csapdasebzés | Híd rése | Középső landoló |
+|---|---:|---:|---:|---:|---:|---:|
+| Easy | 120 | 0,82× | 0,75× | 0,75× | 2,4 m | 8 m |
+| Normal | 100 | 1× | 1× | 1× | 3,3 m | 6 m |
+| Hard | 80 | 1,25× | 1,25× | 1,25× | 4,2 m | 4,5 m |
+
+A checkpoint_interval célérték, nem pontos távolsági ígéret: a landmarkok és
+biztonságos felvezetések miatt a pontok helye eltérhet. A Várudvar jelenlegi
+700–800 m terve legalább 5/4/3 pontot tartalmaz Easy/Normal/Hard sorrendben.
+Más, még nem megépített biome definícióban a kötelező biztonságos váz
+helyigénye korlátozhatja a checkpointok számát.
+
+Ellenőrzések: `stage_grammar_smoke.gd` 1920 külön seedet vizsgál a közös
+tervező adatain; ez nem a kilenc jövőbeli pálya fizikai vagy vizuális elfogadása.
+`difficulty_runtime_smoke.gd` az első pálya tényleges objektumait és profiljait
+ellenőrzi. `first_course_smoke.gd` mindhárom elsőpálya-útvonalon a valódi
+játékosfizikával halad végig. Az Android-látvány, érintés és játékegyensúly
+telefonon továbbra is ellenőrzendő. A hosszú pálya környezete még blockout;
+a végleges mockup-közeli várudvari assetkészlet külön feladat.

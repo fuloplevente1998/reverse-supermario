@@ -601,7 +601,10 @@ func _setup_environment() -> void:
     env.tonemap_mode = Environment.TONE_MAPPER_FILMIC
     env.glow_enabled = false # Mobile: use emissive materials without post-process bloom.
     env.fog_enabled = true
-    env.fog_light_color = Color(0.46, 0.40, 0.34, 1)\n    env.fog_light_energy = 0.42\n    env.fog_density = 0.0010\n    env.fog_height = 0.0
+    env.fog_light_color = Color(0.46, 0.40, 0.34, 1)
+    env.fog_light_energy = 0.42
+    env.fog_density = 0.0010
+    env.fog_height = 0.0
     $WorldEnvironment.environment = env
     $Sun.light_color = Color(1.0, 0.88, 0.73)
     $Sun.light_energy = 0.60

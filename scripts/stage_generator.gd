@@ -6,6 +6,8 @@ const MovingPlatform = preload("res://scripts/moving_platform.gd")
 const EnemyScript = preload("res://scripts/enemy.gd")
 const Hazard = preload("res://scripts/stage_hazard.gd")
 const SideStageOne = preload("res://scripts/side_stage_one.gd")
+const LongStageOne = preload("res://scripts/generation/long_stage_one.gd")
+const NewStageCatalog = preload("res://scripts/generation/stage_catalog.gd")
 
 # Authored layouts: geometry and encounter placement differ, not only the palette.
 const STAGES := [
@@ -22,18 +24,21 @@ const STAGES := [
 ]
 
 static func title(number: int) -> String:
-    return str(STAGES[number - 1]["name"])
+    return NewStageCatalog.title(number)
+
+static func goal(number: int) -> String:
+    return NewStageCatalog.goal(number)
 
 static func width(number: int) -> float:
     if number == 1:
         return 6.0
     return float(STAGES[number - 1]["width"])
 
-static func end_z(number: int) -> float:
-    return SideStageOne.END_Z if number == 1 else 45.0
+static func end_z(number: int, difficulty_index: int = 1) -> float:
+    return LongStageOne.end_z(difficulty_index) if number == 1 else 45.0
 
-static func ground_height(number: int, z: float) -> float:
-    return SideStageOne.height_at(z) if number == 1 else 0.0
+static func ground_height(number: int, z: float, difficulty_index: int = 1) -> float:
+    return LongStageOne.height_at(difficulty_index, z) if number == 1 else 0.0
 
 static func build(game: Node3D, number: int) -> void:
     var recipe: Dictionary = STAGES[number - 1]
@@ -54,7 +59,7 @@ static func build(game: Node3D, number: int) -> void:
         floor_material.uv1_scale = Vector3.ONE * 0.5
     var trim := Art.material(Color("#dbbd7f"), 0.3)
     if number == 1:
-        SideStageOne.build(game)
+        LongStageOne.build(game)
         _scenery(game, number, recipe, stone, trim)
         game.set_meta("layout_id", number)
         game.set_meta("difficulty", difficulty)
@@ -329,13 +334,14 @@ static func _scenery(game: Node3D, number: int, recipe: Dictionary, stone: Mater
             var visual := gate_scene.instantiate() as Node3D
             if visual:
                 visual.name = "FortressGateVisual"
-                visual.position = Vector3(0, 0, end_z(number) - 5.0)
+                visual.position = Vector3(0, 0, end_z(number, game.difficulty_index) - 5.0)
                 game.add_child(visual)
                 custom_gate = true
     if not custom_gate:
+        var fallback_gate_z := end_z(number, game.difficulty_index) - 5.0
         for x in [-2.3, 2.3]:
-            Art.box(game, Vector3(1, 5.5, 1.1), Vector3(x, 2.75, 40), stone)
-        Art.box(game, Vector3(5.8, 0.65, 1.1), Vector3(0, 5.2, 40), trim)
+            Art.box(game, Vector3(1, 5.5, 1.1), Vector3(x, 2.75, fallback_gate_z), stone)
+        Art.box(game, Vector3(5.8, 0.65, 1.1), Vector3(0, 5.2, fallback_gate_z), trim)
     if number == 10:
         Art.box(game, Vector3(3, 4, 1), Vector3(0, 2, 43), trim)
     # Imported 3D scenery has its own layer. The side camera uses a clean backdrop.

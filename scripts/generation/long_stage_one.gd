@@ -60,6 +60,10 @@ static func build(game: Node3D) -> void:
     var gaps: Array[Vector2] = []
     var checkpoint_positions: Array[float] = []
 
+    # Stable opening lesson/reference encounter retained across all generated
+    # layouts so the first seconds remain immediately readable.
+    _enemy(game, "guard", 8.0, false)
+
     for segment: Dictionary in plan["segments"]:
         _build_segment_geometry(stage_root, game, segment, stone, trim, hazard_mat, gaps)
         _build_segment_gameplay(game, segment, checkpoint_positions)

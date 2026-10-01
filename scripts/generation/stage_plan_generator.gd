@@ -41,7 +41,7 @@ static func generate(stage_number: int, difficulty_index: int = 1, seed_override
     while cursor < body_target - 18.0:
         var remaining: float = body_target - cursor
 
-        var signature_reserve: float = _remaining_signature_length(signatures)
+        var signature_reserve: float = _remaining_signature_budget(signatures)
 
         # Checkpoints are inserted by distance, but never at the expense of
         # required biome signature segments. Recovery terrain is inserted first
@@ -87,7 +87,9 @@ static func generate(stage_number: int, difficulty_index: int = 1, seed_override
 
         var base_length: float = SegmentCatalog.length(candidate)
         var variation: float = 1.0
-        if candidate not in ["checkpoint"]:
+        # Required signature lengths stay exact so the reserved geometry budget
+        # remains deterministic. Filler segments may still vary.
+        if candidate not in ["checkpoint"] and candidate not in spec["signature_segments"]:
             variation = rng.randf_range(0.90, 1.10)
         var segment_length: float = minf(base_length * variation, remaining)
 
@@ -146,10 +148,16 @@ static func _append_segment(segments: Array[Dictionary], segment_id: String, cur
     })
     return cursor + segment_length
 
-static func _remaining_signature_length(signatures: Array) -> float:
+static func _remaining_signature_budget(signatures: Array) -> float:
     var total := 0.0
     for segment_id in signatures:
         total += SegmentCatalog.length(str(segment_id))
+    # In the worst case each remaining hero/signature segment needs a safe
+    # traversal before it, plus one final recovery before the mini-boss.
+    # Reserving this up front guarantees that required biome landmarks cannot
+    # be crowded out by random filler or checkpoint insertion.
+    if not signatures.is_empty():
+        total += SegmentCatalog.length("traversal") * float(signatures.size() + 1)
     return total
 
 static func _weighted_pick_allowed(weights: Dictionary, previous_id: String, difficulty_index: int, progress: float, rng: RandomNumberGenerator) -> String:

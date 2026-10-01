@@ -2,6 +2,7 @@ extends RefCounted
 
 # Authored Blender meshes, instanced and batched per streamed segment.
 # Spans describe actual solid ground only: [z0, z1, y0, y1]. Gaps stay empty.
+const First100 = preload("res://scripts/generation/courtyard_first100.gd")
 const WorldScenery = preload("res://scripts/world_scenery.gd")
 static var stone_mesh: Mesh
 static var limestone: StandardMaterial3D
@@ -42,12 +43,9 @@ static func dress_segment(parent: Node3D, segment: Dictionary, spans: Array[Vect
     var caps: Array[Transform3D] = []
     var tiles: Array[Transform3D] = []
     var half := width * 0.5
+    var first100 := parent.position.z < First100.END
     for original_span: Vector4 in spans:
         var span := original_span
-        if str(segment["id"]) == "start":
-            span.x = maxf(25.0, span.x)
-            if span.x >= span.y:
-                continue
         var angle := -atan2(span.w - span.z, span.y - span.x)
         var slope_basis := Basis(Vector3.RIGHT, angle)
         # Relief follows the same slope as the collision, with staggered joints.
@@ -69,13 +67,22 @@ static func dress_segment(parent: Node3D, segment: Dictionary, spans: Array[Vect
             for row in range(4):
                 tiles.append(Transform3D(slope_basis.scaled(Vector3(width / 4.0 - 0.04, 0.12, maxf(0.02, tile_length - 0.035))), Vector3(-half + width / 8.0 + row * width / 4.0, y - 0.06, z)))
             tile_cursor += tile_length
-    _batch(root, "ReliefMasonry", masonry, limestone, rng)
-    _batch(root, "CarvedCornice", caps, paving, rng)
-    _batch(root, "WalkwayPaving", tiles, paving, rng)
+    if first100:
+        var vendor_stone := First100.mesh_for("stone")
+        var vendor_paving := First100.mesh_for("paving")
+        _batch(root, "ReliefMasonry", masonry, vendor_stone.surface_get_material(0), rng, vendor_stone)
+        _batch(root, "CarvedCornice", caps, vendor_stone.surface_get_material(0), rng, vendor_stone)
+        _batch(root, "WalkwayPaving", tiles, vendor_paving.surface_get_material(0), rng, vendor_paving)
+    else:
+        _batch(root, "ReliefMasonry", masonry, limestone, rng)
+        _batch(root, "CarvedCornice", caps, paving, rng)
+        _batch(root, "WalkwayPaving", tiles, paving, rng)
     root.set_meta("ground_spans", spans)
     root.set_meta("stone_instances", masonry.size() + caps.size() + tiles.size())
 
     var length := float(segment["length"])
+    if first100:
+        return
     var opening := str(segment["id"]) == "start"
     var cursor := 30.0 if opening else 6.0
     while cursor + 6.0 <= length:
@@ -124,13 +131,13 @@ static func obstacle_visual(parent: Node3D, dimensions: Vector3) -> void:
     model.scale = dimensions
     parent.add_child(model)
 
-static func _batch(parent: Node3D, node_name: String, transforms: Array[Transform3D], material: Material, rng: RandomNumberGenerator) -> void:
+static func _batch(parent: Node3D, node_name: String, transforms: Array[Transform3D], material: Material, rng: RandomNumberGenerator, source_mesh: Mesh = null) -> void:
     if transforms.is_empty():
         return
     var mesh := MultiMesh.new()
     mesh.transform_format = MultiMesh.TRANSFORM_3D
     mesh.use_colors = true
-    mesh.mesh = stone_mesh
+    mesh.mesh = source_mesh if source_mesh != null else stone_mesh
     mesh.instance_count = transforms.size()
     for i in range(transforms.size()):
         mesh.set_instance_transform(i, transforms[i])

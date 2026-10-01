@@ -3,7 +3,7 @@ extends RefCounted
 const Art = preload("res://scripts/art.gd")
 const Enemy = preload("res://scripts/enemy.gd")
 const Hazard = preload("res://scripts/stage_hazard.gd")
-const SampleArt = preload("res://scripts/side_sample_art.gd")
+const First100 = preload("res://scripts/generation/courtyard_first100.gd")
 const WorldScenery = preload("res://scripts/world_scenery.gd")
 const PlanGenerator = preload("res://scripts/generation/stage_plan_generator.gd")
 const EncounterDirector = preload("res://scripts/generation/encounter_director.gd")
@@ -71,6 +71,9 @@ static func build(game: Node3D) -> void:
     game.set_meta("side_course_end_z", course_end)
     game.set_meta("stage_seed", int(plan["seed"]))
     game.set_meta("stage_biome", str(plan["biome"]))
+    game.set_meta("first100_obstacles", First100.obstacle_specs(game.difficulty_index, plan))
+    game.set_meta("first100_range", Vector2(First100.START, First100.END))
+    game.set_meta("side_reference_layers", 3)
 
     var mortar := Art.material(Color("#807057"))
 
@@ -106,8 +109,6 @@ static func build(game: Node3D) -> void:
     _background(game, course_end)
     _finish_flag(game, course_end)
 
-    # Retain the established opening encounter and its reference architecture.
-    SampleArt.build(game)
 
     var streamer := SegmentStreamer.new()
     streamer.name = "LongStageStreamer"
@@ -145,11 +146,20 @@ static func _build_segment_geometry(stage_root: Node3D, game: Node3D, segment: D
         var points: Array[Vector2] = segment["terrain_points"]
         for i in range(points.size() - 1):
             spans.append(Vector4(points[i].x, points[i + 1].x, points[i].y, points[i + 1].y))
+    var first_gap := First100.gap_for(game.difficulty_index)
+    var local_gap := first_gap - Vector2.ONE * segment_root.position.z
+    if first_gap != Vector2.ZERO and local_gap.x < length and local_gap.y > 0:
+        spans = _cut_spans(spans, local_gap)
+        gaps.append(first_gap)
     for i in range(spans.size()):
         var width := float(DifficultyProfiles.get_profile(game.difficulty_index)["bridge_width"]) if id == "bridge" else COURSE_WIDTH
         _terrain(segment_root, spans[i], ("BridgeDeck%d" % i) if id == "bridge" else ("Floor" if i == 0 else "Floor%d" % i), mortar, width)
     var art_width := float(DifficultyProfiles.get_profile(game.difficulty_index)["bridge_width"]) if id == "bridge" else COURSE_WIDTH
     CourseArt.dress_segment(segment_root, segment, spans, art_width)
+    var ground_query := func(z: float) -> float: return height_at(game.difficulty_index, z)
+    First100.dress(segment_root, spans, ground_query)
+    var opening_obstacles: Array[Dictionary] = game.get_meta("first100_obstacles")
+    First100.build_obstacles(segment_root, opening_obstacles, segment_root.position.z, length, ground_query, hurdles)
     if id == "bridge":
         for span: Vector4 in spans:
             for side in [-1.0, 1.0]:
@@ -169,6 +179,7 @@ static func _build_segment_geometry(stage_root: Node3D, game: Node3D, segment: D
             obstacle_offsets.append(length * 0.5)
     for offset: float in obstacle_offsets:
         var global_z := segment_root.position.z + offset
+        if global_z < First100.END: continue
         var height: float = [0.65, 0.85, 1.05][game.difficulty_index]
         var ground := height_at(game.difficulty_index, global_z)
         var body := StaticBody3D.new()
@@ -183,6 +194,20 @@ static func _build_segment_geometry(stage_root: Node3D, game: Node3D, segment: D
         CourseArt.obstacle_visual(body, dimensions)
         segment_root.add_child(body)
         hurdles.append(global_z)
+
+static func _cut_spans(spans: Array[Vector4], gap: Vector2) -> Array[Vector4]:
+    var result: Array[Vector4] = []
+    for span: Vector4 in spans:
+        if span.y <= gap.x or span.x >= gap.y:
+            result.append(span)
+            continue
+        if span.x < gap.x:
+            var t := (gap.x - span.x) / (span.y - span.x)
+            result.append(Vector4(span.x, gap.x, span.z, lerpf(span.z, span.w, t)))
+        if span.y > gap.y:
+            var t := (gap.y - span.x) / (span.y - span.x)
+            result.append(Vector4(gap.y, span.y, lerpf(span.z, span.w, t), span.w))
+    return result
 
 static func _terrain(parent: Node3D, span: Vector4, node_name: String, material: Material, width: float) -> void:
     var half := width * 0.5

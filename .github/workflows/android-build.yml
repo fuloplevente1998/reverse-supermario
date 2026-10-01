@@ -138,7 +138,7 @@ jobs:
         shell: bash
         run: |
           GODOT="$(find "$HOME/.local/share/godot/godot_executable" -maxdepth 1 -type f -name 'Godot*_linux.x86_64' -print -quit)"
-          for TEST in generator_rebuild_smoke runtime_generator_smoke encounter_streaming_smoke difficulty_runtime_smoke stage_grammar_smoke knight_model_smoke world_art_smoke side_view_smoke first_course_smoke courtyard_coverage_smoke side_sample_smoke; do
+          for TEST in generator_rebuild_smoke runtime_generator_smoke encounter_streaming_smoke difficulty_runtime_smoke stage_grammar_smoke knight_model_smoke world_art_smoke side_view_smoke first_course_smoke courtyard_coverage_smoke first100_smoke side_sample_smoke; do
             timeout 120s "$GODOT" --headless --audio-driver Dummy --path . --fixed-fps 60 --script "res://tests/$TEST.gd" 2>&1 | tee "$TEST.log"
             if grep -E 'SCRIPT ERROR|ERROR:' "$TEST.log"; then exit 1; fi
             grep -q '_SMOKE_OK' "$TEST.log"
@@ -160,6 +160,7 @@ jobs:
           timeout 90s xvfb-run -a "$GODOT" --path . --rendering-method gl_compatibility --audio-driver Dummy --script res://tests/preview_capture.gd 2>&1 | tee preview.log
           timeout 90s xvfb-run -a "$GODOT" --path . --rendering-method gl_compatibility --audio-driver Dummy --script res://tests/side_course_preview.gd 2>&1 | tee -a preview.log
           timeout 90s xvfb-run -a "$GODOT" --path . --rendering-method gl_compatibility --audio-driver Dummy --script res://tests/side_sample_preview.gd 2>&1 | tee -a preview.log
+          timeout 90s xvfb-run -a "$GODOT" --path . --rendering-method gl_compatibility --audio-driver Dummy --script res://tests/first100_preview.gd 2>&1 | tee -a preview.log
           if grep -E 'SCRIPT ERROR|ERROR:' preview.log; then
             exit 1
           fi
@@ -198,6 +199,7 @@ jobs:
             side_view_smoke.log
             first_course_smoke.log
             courtyard_coverage_smoke.log
+            first100_smoke.log
             side_sample_smoke.log
             generator_rebuild_smoke.log
             runtime_generator_smoke.log
@@ -229,8 +231,8 @@ jobs:
         shell: bash
         run: |
           if [ "$GITHUB_REF_NAME" = "godot/generator-rebuild" ]; then
-            TAG="preview-0.2.2-${BUILD_NUMBER}"
-            TITLE="0.2.2 – teljes Várudvar: terep, akadályok és grafika"
+            TAG="preview-0.2.3-${BUILD_NUMBER}"
+            TITLE="0.2.3 – Várudvar: első 100 m, kész assetek és fizikai akadályok"
           elif [ "$GITHUB_REF_NAME" = "art/side-reference-pass-0.1.9" ]; then
             TAG="preview-0.1.9-${BUILD_NUMBER}"
             TITLE="0.1.9 – referencia-közeli oldalnézeti grafikai pass"

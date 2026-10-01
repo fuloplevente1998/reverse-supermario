@@ -22,6 +22,8 @@ func _verify() -> void:
         for enemy in get_nodes_in_group("enemies"):
             enemy.set_physics_process(false)
             exclude.append(enemy.get_rid())
+        for solid in get_nodes_in_group("first100_solids"):
+            exclude.append(solid.get_rid())
         for hazard in get_nodes_in_group("hazards"):
             hazard.set_physics_process(false)
         var end_z := float(stage.get_meta("side_course_end_z"))

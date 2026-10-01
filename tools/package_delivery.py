@@ -48,14 +48,32 @@ for name in [
 ]:
     shutil.copyfile(root / "previews" / name, out / name)
 
-if release_version == "0.2.2":
+if release_version in ("0.2.2", "0.2.3"):
     for pattern, filename in [("side_course_03_*.png", "Varudvar-kozepe.png"), ("side_course_06_*.png", "Varudvar-kapu.png"), ("side_course_wide.png", "Varudvar-szeles.png")]:
         image = next(iter(sorted((root / "previews").glob(pattern))), None)
         if image is None:
             raise RuntimeError(f"Missing full-course visual validation: {pattern}")
         shutil.copyfile(image, out / filename)
 
-if release_version == "0.2.2":
+if release_version == "0.2.3":
+    for name in ["first100_00.png", "first100_02.png", "first100_04.png", "first100_wide.png"]:
+        shutil.copyfile(root / "previews" / name, out / name)
+    notes = (
+        "# 0.2.3 – Várudvar: első 100 méter\n\n"
+        "Quaternius Medieval Village és Fantasy Props ingyenes Standard assetek "
+        "kerültek az első kb. 100 méterre. A csomagok saját mellékelt licence CC0; "
+        "a források és licencek az assets/vendor/quaternius könyvtárban szerepelnek. "
+        "Textúrázott falak, kapuk, borostyán, zászlók és udvari kellékek váltják a korábbi díszletet.\n\n"
+        "Easy és Normal hat ütköző akadálycsoportot és egy valódi talajrést kap. "
+        "Hard öt akadálycsoportja az íjászok mellett jelenik meg, a harc utáni pihenő szabad. "
+        "Ládák, hordók, padakadály és kétlépcsős ládasor tényleges ugrást igényelnek. "
+        "A collider a látható tárgyhoz igazodik. A későbbi pályarészek további art passra várnak.\n\n"
+        "A CI ellenőrzi az ütközést, az első akadály átugrását, mindhárom teljes útvonalat, "
+        "a nehézséget, a harcot, a kezelőfelületet és a képi előnézeteket. "
+        "Telefonos kipróbálás és teljesítménymérés még szükséges.\n\n"
+        f"Commit: {os.environ['GITHUB_SHA']}\n"
+    )
+elif release_version == "0.2.2":
     notes = (
         "# 0.2.2 – Várudvar: végig díszített, változatos útvonal\n\n"
         "Az első pálya teljes 700–800 méterén falazott talaj, burkolat, "

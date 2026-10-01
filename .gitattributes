@@ -1,0 +1,2 @@
+# glTF buffers are binary even when their header contains no NUL bytes.
+*.bin binary

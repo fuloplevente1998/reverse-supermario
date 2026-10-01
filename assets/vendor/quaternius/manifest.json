@@ -1,0 +1,196 @@
+{
+  "village": {
+    "source_sha256": "e60dea67c10f30dccccfbff92a7933f5ea5cfe99be0e2a0fa5118cceabeec5c4",
+    "license": "village_LICENSE.txt",
+    "models": [
+      {
+        "id": "stone",
+        "original": "Medieval Village MegaKit[Standard]/glTF/Prop_Brick1.gltf",
+        "original_size": [
+          0.34563612937927246,
+          0.20802833884954453,
+          0.2501659542322159
+        ],
+        "normalized_origin": "center"
+      },
+      {
+        "id": "stone_alt",
+        "original": "Medieval Village MegaKit[Standard]/glTF/Prop_Brick2.gltf",
+        "original_size": [
+          0.3954097777605057,
+          0.24488914012908936,
+          0.21688799560070038
+        ],
+        "normalized_origin": "center"
+      },
+      {
+        "id": "paving",
+        "original": "Medieval Village MegaKit[Standard]/glTF/Floor_Brick.gltf",
+        "original_size": [
+          2,
+          0.020000374875962734,
+          2
+        ],
+        "normalized_origin": "center"
+      },
+      {
+        "id": "wall",
+        "original": "Medieval Village MegaKit[Standard]/glTF/Wall_UnevenBrick_Straight.gltf",
+        "original_size": [
+          2.0000001192092896,
+          3.1226887702941895,
+          0.4064817279577255
+        ],
+        "normalized_origin": "bottom_center"
+      },
+      {
+        "id": "window",
+        "original": "Medieval Village MegaKit[Standard]/glTF/Wall_UnevenBrick_Window_Wide_Round.gltf",
+        "original_size": [
+          2.0000001192092896,
+          3.1226887702941895,
+          0.4064817279577255
+        ],
+        "normalized_origin": "bottom_center"
+      },
+      {
+        "id": "arch",
+        "original": "Medieval Village MegaKit[Standard]/glTF/Wall_UnevenBrick_Door_Round.gltf",
+        "original_size": [
+          2.0000001192092896,
+          3.1226887702941895,
+          0.4064817279577255
+        ],
+        "normalized_origin": "bottom_center"
+      },
+      {
+        "id": "door",
+        "original": "Medieval Village MegaKit[Standard]/glTF/Door_1_Round.gltf",
+        "original_size": [
+          1.1200128868222237,
+          2.3182365894317627,
+          0.12070027366280556
+        ],
+        "normalized_origin": "bottom_center"
+      },
+      {
+        "id": "ivy",
+        "original": "Medieval Village MegaKit[Standard]/glTF/Prop_Vine1.gltf",
+        "original_size": [
+          1.5357589721679688,
+          2.602551430463791,
+          0.21896351873874664
+        ],
+        "normalized_origin": "bottom_center"
+      },
+      {
+        "id": "ivy_alt",
+        "original": "Medieval Village MegaKit[Standard]/glTF/Prop_Vine4.gltf",
+        "original_size": [
+          1.0165728032588959,
+          1.5881726741790771,
+          0.15001652017235756
+        ],
+        "normalized_origin": "bottom_center"
+      },
+      {
+        "id": "fence",
+        "original": "Medieval Village MegaKit[Standard]/glTF/Prop_WoodenFence_Single.gltf",
+        "original_size": [
+          2.064099669456482,
+          0.83810905367136,
+          0.1198200061917305
+        ],
+        "normalized_origin": "bottom_center"
+      },
+      {
+        "id": "stairs",
+        "original": "Medieval Village MegaKit[Standard]/glTF/Stairs_Exterior_Straight.gltf",
+        "original_size": [
+          2.000000476837158,
+          1.2036878764629364,
+          2.0779173374176025
+        ],
+        "normalized_origin": "bottom_center"
+      }
+    ],
+    "texture_limit": {
+      "color": 1024,
+      "normal_roughness": 512
+    }
+  },
+  "props": {
+    "source_sha256": "8b6f7e806d222e585478f0e1bdc6b271bbc7bc6f84dd6af8ca703a7c64f0cb1e",
+    "license": "props_LICENSE.txt",
+    "models": [
+      {
+        "id": "crate",
+        "original": "Exports/glTF/Crate_Wooden.gltf",
+        "original_size": [
+          1.079818606376648,
+          1.1934973150491714,
+          1.1644785404205322
+        ],
+        "normalized_origin": "bottom_center"
+      },
+      {
+        "id": "barrel",
+        "original": "Exports/glTF/Barrel.gltf",
+        "original_size": [
+          0.6980310082435608,
+          0.8979583382606506,
+          0.6980309784412384
+        ],
+        "normalized_origin": "bottom_center"
+      },
+      {
+        "id": "banner",
+        "original": "Exports/glTF/Banner_1.gltf",
+        "original_size": [
+          1.613107708923053,
+          2.392226219177246,
+          0.1905701905488968
+        ],
+        "normalized_origin": "bottom_center"
+      },
+      {
+        "id": "bench",
+        "original": "Exports/glTF/Bench.gltf",
+        "original_size": [
+          2.776681661605835,
+          0.5332137965597212,
+          0.5342670679092407
+        ],
+        "normalized_origin": "bottom_center"
+      },
+      {
+        "id": "cart",
+        "original": "Exports/glTF/Stall_Cart_Empty.gltf",
+        "original_size": [
+          3.0205445885658264,
+          2.631825720425695,
+          1.059701681137085
+        ],
+        "normalized_origin": "bottom_center"
+      },
+      {
+        "id": "lantern",
+        "original": "Exports/glTF/Lantern_Wall.gltf",
+        "original_size": [
+          0.3573414534330368,
+          1.3370076194405556,
+          1.302314456552267
+        ],
+        "normalized_origin": "bottom_center"
+      }
+    ],
+    "texture_limit": {
+      "color": 1024,
+      "normal_roughness": 512
+    }
+  },
+  "sources": {
+    "village": "https://quaternius.itch.io/medieval-village-megakit",
+    "props": "https://quaternius.itch.io/fantasy-props-megakit"
+  }
+}

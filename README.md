@@ -2,7 +2,7 @@
 
 Android action-platformer prototype built with Godot 4 Mobile renderer. Current focus: the generated 700–800 m courtyard level, with three difficulty profiles, safe segment ordering, real jump gaps and checkpoints. The other nine stages retain their earlier prototype layouts; their distinct mockup-based environments and segment kits are future work.
 
-**Godot generator rebuild:** [docs/GODOT_GENERATOR_REBUILD.md](docs/GODOT_GENERATOR_REBUILD.md). **0.1.8 art sample:** [docs/SIDE_SAMPLE_0.1.8.md](docs/SIDE_SAMPLE_0.1.8.md). **0.1.9 side-view reference roadmap:** [docs/SIDE_VIEW_REFERENCE_ROADMAP_2026-10-01.md](docs/SIDE_VIEW_REFERENCE_ROADMAP_2026-10-01.md). **Current design and continuation guide:** [docs/PROJECT_HANDOFF.md](docs/PROJECT_HANDOFF.md). **0.1.7 side-view notes:** [art/SIDE_VIEW_0.1.7.md](art/SIDE_VIEW_0.1.7.md). **Asset inventory:** [docs/ASSET_MANIFEST.md](docs/ASSET_MANIFEST.md).
+**0.2.3 first 100m asset sample:** [docs/FIRST100_0.2.3.md](docs/FIRST100_0.2.3.md). **Godot generator rebuild:** [docs/GODOT_GENERATOR_REBUILD.md](docs/GODOT_GENERATOR_REBUILD.md). **0.1.8 art sample:** [docs/SIDE_SAMPLE_0.1.8.md](docs/SIDE_SAMPLE_0.1.8.md). **0.1.9 side-view reference roadmap:** [docs/SIDE_VIEW_REFERENCE_ROADMAP_2026-10-01.md](docs/SIDE_VIEW_REFERENCE_ROADMAP_2026-10-01.md). **Current design and continuation guide:** [docs/PROJECT_HANDOFF.md](docs/PROJECT_HANDOFF.md). **0.1.7 side-view notes:** [art/SIDE_VIEW_0.1.7.md](art/SIDE_VIEW_0.1.7.md). **Asset inventory:** [docs/ASSET_MANIFEST.md](docs/ASSET_MANIFEST.md).
 
 See `FORDITOTT_SUPERMARIO_PROJECT.md` for the complete Hungarian design summary.
 
@@ -27,7 +27,7 @@ The Android preview uses package `com.fuloplevente.reverseplatformer.preview`, s
 
 ## Art pipeline
 
-The current stages use original procedural 3D armor, animated cape, trees, pillars and castle gates. It runs as a native Godot game. Detailed models and animations can be authored in Blender and exported as glTF 2.0 (.glb) into Godot. Keep a source .blend file and exported .glb together, use small shared materials and texture atlases, and profile the result on Android hardware.
+The current stages combine original procedural 3D armor, animated cape, trees, pillars and castle gates with selected CC0 Quaternius Medieval Village/Fantasy Props models in Stage 1’s first 100m. It runs as a native Godot game. Detailed models and animations can be authored in Blender and exported as glTF 2.0 (.glb) into Godot. Keep a source .blend file and exported .glb together, use small shared materials and texture atlases, and profile the result on Android hardware.
 
 ## Engine
 
@@ -35,7 +35,7 @@ Godot 4.7.2 stable, Mobile renderer.
 
 ## IP note
 
-“Fordított SuperMario” is a concept nickname only. This repository contains no Nintendo assets, characters, level data, audio or code. The production game should use fully original names and assets.
+“Fordított SuperMario” is a concept nickname only. This repository contains no Nintendo assets, characters, level data, audio or code. The production game should use original names and original or appropriately licensed assets.
 
 
 ## 0.0.7 — distinct stages and mobile controls

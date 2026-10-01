@@ -5,6 +5,7 @@
 #include "Stage/RPStageCatalog.h"
 #include "Stage/RPStageDefinition.h"
 #include "Stage/RPStageSegmentDefinition.h"
+#include "Stage/RPStageSegmentActor.h"
 
 ARPStageGenerator::ARPStageGenerator()
 {
@@ -189,6 +190,19 @@ void ARPStageGenerator::AddSegment(
     {
         SegmentActor->Tags.Add(FName(TEXT("GeneratedStageSegment")));
         SegmentActor->Tags.Add(FName(*UEnum::GetValueAsString(Type)));
+
+        if (ARPStageSegmentActor* ModularSegment = Cast<ARPStageSegmentActor>(SegmentActor))
+        {
+            ModularSegment->SegmentType = Type;
+            ModularSegment->LengthMeters = LengthMeters;
+            ModularSegment->Seed = Seed;
+            if (StageDefinition)
+            {
+                ModularSegment->Palette = StageDefinition->EnvironmentPalette;
+            }
+            ModularSegment->RebuildSegment();
+        }
+
         SpawnedSegmentActors.Add(SegmentActor);
     }
 }

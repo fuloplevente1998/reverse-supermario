@@ -38,6 +38,17 @@ void ARPPlayerCharacter::BeginPlay()
     Health->OnDeath.AddDynamic(this, &ARPPlayerCharacter::HandleDeath);
 }
 
+void ARPPlayerCharacter::Tick(const float DeltaSeconds)
+{
+    Super::Tick(DeltaSeconds);
+
+    if (!MobileMoveInput.IsNearlyZero())
+    {
+        MoveForward(MobileMoveInput.Y);
+        MoveRight(MobileMoveInput.X);
+    }
+}
+
 void ARPPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
     Super::SetupPlayerInputComponent(PlayerInputComponent);
@@ -148,4 +159,34 @@ void ARPPlayerCharacter::ToggleView()
     {
         CameraMode->ToggleCameraMode();
     }
+}
+
+void ARPPlayerCharacter::SetMobileMoveInput(const FVector2D Value)
+{
+    MobileMoveInput = Value.GetClampedToMaxSize(1.0f);
+}
+
+void ARPPlayerCharacter::MobileJumpPressed()
+{
+    Jump();
+}
+
+void ARPPlayerCharacter::MobileJumpReleased()
+{
+    StopJumping();
+}
+
+void ARPPlayerCharacter::MobileAttack()
+{
+    Attack();
+}
+
+void ARPPlayerCharacter::MobileBlockPressed()
+{
+    StartBlock();
+}
+
+void ARPPlayerCharacter::MobileBlockReleased()
+{
+    StopBlock();
 }

@@ -378,3 +378,40 @@ Egy generált pálya csak akkor tekinthető elkészültnek, ha:
 A Godot generator rebuild nem dobja el a 0.1.9 munkát. A karakter, harc, UI, kamera, Blender pipeline és mobil buildlánc újrahasznosul.
 
 A változás fő célja: **a korábbi rövid, külön koordinátalistákból álló pályarendszert egy hosszú, moduláris, mockup-alapú pályageneráló rendszerre cserélni.**
+
+
+---
+
+## Difficulty-aware geometria
+
+Nem követelmény, hogy Easy / Normal / Hard ugyanazt a pályageometriát használja.
+
+A közös generátor és ugyanaz a stage/biome definíció szolgálja ki mindhárom nehézséget, de a difficulty profile a geometriai generálást is módosíthatja.
+
+Példák:
+
+- **Easy:** szélesebb hidak, kisebb rések, több biztonságos landing, egyszerűbb platformritmus;
+- **Normal:** az alap tervezett geometria;
+- **Hard:** nehezebb platformkombinációk, nagyobb rések, több mozgó elem, veszélyesebb alternatív útvonalak, ritkább safe recovery.
+
+A biome, fő landmarkok, történeti helyszín és vizuális identitás ugyanaz maradjon, de a konkrét útvonal és szegmenssorrend eltérhet.
+
+## Szegmens-sorrendi szabályok / pályanyelvtan
+
+A weighted random választás fölött kötelező constraint/grammar réteg működik. A generátor nem tehet tetszőleges szegmenseket egymás után.
+
+Alapszabályok:
+
+- nagy gap vagy precíz ugrás után jöjjön biztonságos landing / traversal;
+- nagy hazard után ne jöjjön közvetlenül újabb nagy hazard;
+- két nagy combat encounter között legyen traversal, vista, checkpoint vagy rövid pihenő;
+- checkpoint előtt és után legyen biztonságos, jól olvasható szakasz;
+- mini-boss előtt legyen felvezetés, utána ne jöjjön azonnal újabb nagy encounter;
+- bridge / moving-platform szakasz után legyen stabil talaj;
+- archer ambush csak akkor kombinálható precíz platformozással, ha a difficulty szabályai ezt megengedik;
+- a pálya eleje egyszerűbb, a közepe változatosabb, a vége intenzívebb legyen;
+- a stage-spec signature segmentjei biztosan kerüljenek be;
+- ha a pálya vége felé még hiányzik kötelező signature/segment típus, kapjon prioritást;
+- Easy több safe recoveryt, Hard sűrűbb és összetettebb, de teljesíthető kombinációkat enged.
+
+Ez nem fix sorrend, hanem szabályvezérelt generálás.

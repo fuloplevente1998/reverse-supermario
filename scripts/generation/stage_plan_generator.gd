@@ -41,9 +41,12 @@ static func generate(stage_number: int, difficulty_index: int = 1, seed_override
     while cursor < body_target - 18.0:
         var remaining: float = body_target - cursor
 
-        # Checkpoints are inserted by distance, but never directly after an
-        # unsafe segment. Recovery terrain is inserted first when required.
-        if cursor >= next_checkpoint:
+        var signature_reserve: float = _remaining_signature_length(signatures)
+
+        # Checkpoints are inserted by distance, but never at the expense of
+        # required biome signature segments. Recovery terrain is inserted first
+        # when required.
+        if cursor >= next_checkpoint and remaining > signature_reserve + SegmentCatalog.length("checkpoint") + 36.0:
             if not _is_safe_recovery(previous_id) and remaining >= SegmentCatalog.length("traversal") + SegmentCatalog.length("checkpoint") + 18.0:
                 var recovery_length: float = minf(SegmentCatalog.length("traversal"), remaining)
                 cursor = _append_segment(segments, "traversal", cursor, recovery_length, rng, spec, difficulty)
@@ -69,7 +72,7 @@ static func generate(stage_number: int, difficulty_index: int = 1, seed_override
         if force_safe_next:
             candidate = "traversal"
             force_safe_next = false
-        elif not signatures.is_empty() and progress >= signature_threshold:
+        elif not signatures.is_empty() and (progress >= signature_threshold or remaining <= signature_reserve + 36.0):
             candidate = str(signatures.front())
             if _allowed_after(previous_id, candidate, difficulty_index, progress):
                 signatures.pop_front()
@@ -142,6 +145,12 @@ static func _append_segment(segments: Array[Dictionary], segment_id: String, cur
         "hazard_speed": difficulty["hazard_speed_multiplier"]
     })
     return cursor + segment_length
+
+static func _remaining_signature_length(signatures: Array) -> float:
+    var total := 0.0
+    for segment_id in signatures:
+        total += SegmentCatalog.length(str(segment_id))
+    return total
 
 static func _weighted_pick_allowed(weights: Dictionary, previous_id: String, difficulty_index: int, progress: float, rng: RandomNumberGenerator) -> String:
     var candidates: Array[String] = []

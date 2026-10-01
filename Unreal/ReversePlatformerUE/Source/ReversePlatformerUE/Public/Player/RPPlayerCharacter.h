@@ -7,6 +7,7 @@
 class UCameraComponent;
 class USpringArmComponent;
 class URPCameraModeComponent;
+class URPHealthComponent;
 
 UCLASS()
 class REVERSEPLATFORMERUE_API ARPPlayerCharacter : public ACharacter
@@ -16,6 +17,7 @@ class REVERSEPLATFORMERUE_API ARPPlayerCharacter : public ACharacter
 public:
     ARPPlayerCharacter();
 
+    virtual void BeginPlay() override;
     virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
 
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Camera")
@@ -26,6 +28,12 @@ public:
 
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Camera")
     TObjectPtr<URPCameraModeComponent> CameraMode;
+
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat")
+    TObjectPtr<URPHealthComponent> Health;
+
+    UPROPERTY(BlueprintReadOnly, Category="Combat")
+    bool bBlocking = false;
 
     UFUNCTION(BlueprintCallable, Category="Reverse Platformer|Input")
     void ToggleView();
@@ -44,4 +52,9 @@ protected:
     void Attack();
     void StartBlock();
     void StopBlock();
+
+    UFUNCTION()
+    void HandleDeath();
+
+    FTransform InitialSpawnTransform;
 };

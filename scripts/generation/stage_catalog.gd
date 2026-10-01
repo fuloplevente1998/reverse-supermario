@@ -164,7 +164,7 @@ static func all() -> Array:
     return STAGES.duplicate(true)
 
 static func title(number: int) -> String:
-    var spec := STAGES[number - 1]
+    var spec: Dictionary = STAGES[number - 1]
     return "%s — %s" % [spec["name"], spec["subtitle"]]
 
 static func goal(number: int) -> String:

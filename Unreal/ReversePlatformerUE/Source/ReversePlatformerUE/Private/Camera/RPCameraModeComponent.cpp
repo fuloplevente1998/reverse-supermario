@@ -43,7 +43,7 @@ void URPCameraModeComponent::SetCameraMode(const ERPCameraMode NewMode)
 
         Character->bUseControllerRotationYaw = false;
         Movement->bOrientRotationToMovement = true;
-        Movement->SetPlaneConstraintNormal(FVector::YAxisVector);
+        Movement->SetPlaneConstraintNormal(FVector(0.0f, 1.0f, 0.0f));
         Movement->SetPlaneConstraintEnabled(true);
         Movement->bSnapToPlaneAtStart = true;
     }

@@ -166,19 +166,19 @@ static func _real_gap(parent: Node3D, difficulty_index: int, length: float, mate
 static func _bridge(parent: Node3D, difficulty_index: int, length: float, stone: Material, trim: Material) -> void:
     # Side view remains traversable while 3D mode gets a narrower bridge on
     # higher difficulties.
-    var widths := [4.8, 3.9, 3.2]
+    var widths: Array[float] = [4.8, 3.9, 3.2]
     _solid(parent, "BridgeDeck", Vector3(widths[difficulty_index], 0.42, length), Vector3(0, -0.21, length * 0.5), trim)
-    for side in [-1.0, 1.0]:
-        var x := side * widths[difficulty_index] * 0.5
+    for side: float in [-1.0, 1.0]:
+        var x: float = side * widths[difficulty_index] * 0.5
         Art.box(parent, Vector3(0.10, 0.55, length), Vector3(x, 0.28, length * 0.5), stone)
 
 static func _stairs(parent: Node3D, length: float, material: Material) -> void:
-    var count := 8
-    var step_length := length / float(count)
+    var count: int = 8
+    var step_length: float = length / float(count)
     for i in range(count):
-        var ridge_index := mini(i, count - 1 - i)
-        var rise := float(ridge_index) * 0.34
-        var height := 0.8 + rise
+        var ridge_index: int = mini(i, count - 1 - i)
+        var rise: float = float(ridge_index) * 0.34
+        var height: float = 0.8 + rise
         _solid(parent, "Step%d" % i, Vector3(COURSE_WIDTH, height, step_length * 0.96), Vector3(0, -0.4 + rise * 0.5, step_length * (i + 0.5)), material)
 
 static func _fountain_marker(parent: Node3D, length: float, material: Material) -> void:

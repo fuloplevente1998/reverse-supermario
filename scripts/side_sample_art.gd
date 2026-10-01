@@ -41,10 +41,11 @@ static func build(game: Node3D) -> void:
             var a: float = maxf(-15.0, cursor)
             var b: float = minf(10.0, cursor + block_length)
             if b - a > 0.07:
-                var y: float = -0.36 - row * 0.58 + (0.018 if (row + index) % 3 == 0 else 0.0)
+                var y: float = -0.36 - row * 0.58 + (0.018 if (row + index) % 3 == 0 else -0.010)
+                var face_offset := 0.028 if (row + index) % 4 == 0 else (-0.018 if (row + index) % 5 == 0 else 0.0)
                 var transform := Transform3D(
-                    Basis.IDENTITY.scaled(Vector3(0.30, 0.54, b - a - 0.045)),
-                    Vector3(-2.70, y, (a + b) * 0.5)
+                    Basis.IDENTITY.scaled(Vector3(0.30, 0.51, b - a - 0.045)),
+                    Vector3(-2.70 + face_offset, y, (a + b) * 0.5)
                 )
                 if row == 4:
                     base_blocks.append(transform)

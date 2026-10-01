@@ -1,4 +1,5 @@
 #include "Stage/RPBiomeCatalog.h"
+#include <initializer_list>
 
 namespace
 {
